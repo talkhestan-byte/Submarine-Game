@@ -109,6 +109,40 @@
   const OXYGEN_DRAIN_RATE = 2.5; 
   const OXYGEN_REFILL_RATE = 25; 
 
+  // ====== سیستم صوتی داخلی (بدون نیاز به فایل) ======
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  function playSound(type) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+    
+    if (type === 'shoot') {
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(800, now);
+      osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+      gain.gain.setValueAtTime(0.05, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+      osc.start(now); osc.stop(now + 0.1);
+    } else if (type === 'explosion') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(150, now);
+      osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      osc.start(now); osc.stop(now + 0.3);
+    } else if (type === 'save') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(400, now);
+      osc.frequency.linearRampToValueAtTime(800, now + 0.1);
+      osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
+      gain.gain.setValueAtTime(0.1, now);
+      gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+      osc.start(now); osc.stop(now + 0.3);
+    }
+  }
+
   // آبجکت‌های بازی
   const player = { x: 50, y: canvas.height / 2, width: 40, height: 20, color: '#fbbf24' };
   let enemies = []; 
@@ -158,8 +192,8 @@
   function fireTorpedo() {
     const now = Date.now();
     if (now - lastFireTime > 300) {
-      // اژدر باریک و بلند
       torpedoes.push({ x: player.x + player.width, y: player.y + player.height / 2 - 2, width: 22, height: 4, speed: TORPEDO_SPEED });
+      playSound('shoot');
       lastFireTime = now;
     }
   }
@@ -172,11 +206,9 @@
     let y, type;
     
     if (score > 1500 && Math.random() > 0.4) {
-        // کشتی‌های سطحی بالای صفحه
         type = 'ship';
         y = 20; 
     } else {
-        // زیردریایی‌های دشمن و مین‌ها در اعماق
         y = Math.random() * (canvas.height - 100) + 60;
         const rand = Math.random();
         if (score > 1500 && rand > 0.7) type = 'mine';
@@ -233,9 +265,9 @@
   }
 
   function update(dt) {
-    // حرکت آزاد (عمودی و افقی) با کشیدن انگشت
+    // حرکت آزاد (عمودی و افقی)
     if (isTouching && touchY !== null && touchX !== null) {
-      const targetX = touchX - 20; // وسط زیردریایی
+      const targetX = touchX - 20; 
       const targetY = touchY - 10; 
       
       const diffX = targetX - player.x;
@@ -245,7 +277,6 @@
       player.y += diffY * 0.15;
     }
     
-    // محدودیت‌های صفحه
     if (player.x < 0) player.x = 0;
     if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
     if (player.y < 0) player.y = 0;
@@ -278,13 +309,13 @@
       lastDiverSpawn = performance.now(); 
     }
 
-    // حرکت اژدرهای کاربر
+    // اژدرهای کاربر
     for (let i = torpedoes.length - 1; i >= 0; i--) {
       torpedoes[i].x += torpedoes[i].speed;
       if (torpedoes[i].x > canvas.width) torpedoes.splice(i, 1);
     }
 
-    // حرکت اژدرهای دشمن
+    // اژدرهای دشمن
     for (let i = enemyTorpedoes.length - 1; i >= 0; i--) {
       const et = enemyTorpedoes[i];
       et.x += et.vx;
@@ -294,7 +325,6 @@
         continue;
       }
       
-      // برخورد اژدر دشمن با شما
       if (et.x < player.x + player.width && et.x + et.width > player.x && 
           et.y < player.y + player.height && et.y + et.height > player.y) {
         enemyTorpedoes.splice(i, 1);
@@ -304,7 +334,7 @@
       }
     }
 
-    // حرکت غواص‌ها
+    // غواص‌ها
     for (let i = divers.length - 1; i >= 0; i--) {
       const d = divers[i];
       d.x -= d.speed;
@@ -313,20 +343,20 @@
       if (d.x < player.x + player.width && d.x + d.width > player.x && d.y < player.y + player.height && d.y + d.height > player.y) {
         divers.splice(i, 1);
         score += 50;
+        playSound('save');
         document.getElementById('score').innerText = score;
       }
     }
 
-    // برخوردها و آپدیت دشمنان
+    // دشمنان
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i]; 
       e.x -= e.speed;
       
-      // دشمن شلیک می‌کند (بعد از 1000 امتیاز)
       if (score > 1000 && e.type === 'sub') {
-          if (performance.now() - e.lastFire > 2000 && Math.random() < 0.05) { // شانس شلیک در هر فریم
+          if (performance.now() - e.lastFire > 2000 && Math.random() < 0.05) { 
               const angle = Math.atan2(player.y - e.y, player.x - e.x);
-              const etSpeed = e.speed * 1.3; // 30% سریع‌تر از خودشان
+              const etSpeed = e.speed * 1.3; 
               enemyTorpedoes.push({
                   x: e.x,
                   y: e.y + e.height/2,
@@ -338,7 +368,6 @@
           }
       }
       
-      // برخورد دشمن با شما
       if (e.x < player.x + player.width && e.x + e.width > player.x && e.y < player.y + player.height && e.y + e.height > player.y) {
         enemies.splice(i, 1); 
         lives--; 
@@ -349,13 +378,13 @@
       
       if (e.x + e.width < 0) { enemies.splice(i, 1); continue; }
       
-      // برخورد اژدر شما با دشمن
       for (let j = torpedoes.length - 1; j >= 0; j--) {
         const t = torpedoes[j];
         if (t.x < e.x + e.width && t.x + t.width > e.x && t.y < e.y + e.height && t.y + t.height > e.y) {
           enemies.splice(i, 1); 
           torpedoes.splice(j, 1); 
           score += e.points;
+          playSound('explosion');
           document.getElementById('score').innerText = score; 
           break;
         }
@@ -366,52 +395,42 @@
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // خط سطح آب
     ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
     ctx.fillRect(0, 0, canvas.width, 40);
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(0, 40); ctx.lineTo(canvas.width, 40); ctx.stroke();
 
-    // موج‌ها
     ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 2;
     for (let i = 40; i < canvas.height; i += 30) { 
         ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i + 10); ctx.stroke(); 
     }
     
-    // غواص‌ها (شبیه شنا کردن)
     divers.forEach(d => {
         ctx.fillStyle = '#10b981'; 
         ctx.save();
         ctx.translate(d.x + 10, d.y + 10);
-        ctx.rotate(-0.4); // شیب مورب برای شنا
+        ctx.rotate(-0.4);
         
-        // سر
         ctx.beginPath(); ctx.arc(0, -8, 4, 0, Math.PI * 2); ctx.fill();
-        // بدن
         ctx.fillRect(-2, -4, 4, 10);
-        // دست‌ها
-        ctx.fillRect(-7, 0, 5, 2); // دست چپ
-        ctx.fillRect(2, 0, 5, 2);  // دست راست
-        // پاها
+        ctx.fillRect(-7, 0, 5, 2); 
+        ctx.fillRect(2, 0, 5, 2);  
         ctx.fillRect(-4, 6, 3, 8);
         ctx.fillRect(1, 6, 3, 8);
         
         ctx.restore();
     });
 
-    // زیردریایی شما
     ctx.fillStyle = player.color; 
     ctx.beginPath();
     ctx.roundRect(player.x, player.y, player.width, player.height, 10); ctx.fill();
     ctx.fillRect(player.x + 10, player.y - 6, 12, 8); 
     ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(player.x - 8, player.y + 10); ctx.lineTo(player.x, player.y + 20); ctx.fill(); 
     
-    // اژدرهای کاربر
     ctx.fillStyle = '#60a5fa';
     torpedoes.forEach(t => ctx.fillRect(t.x, t.y, t.width, t.height));
     
-    // اژدرهای دشمن
     ctx.fillStyle = '#ef4444';
     enemyTorpedoes.forEach(et => {
         ctx.save();
@@ -421,29 +440,25 @@
         ctx.restore();
     });
     
-    // دشمنان
     enemies.forEach(e => {
       ctx.fillStyle = e.color;
       ctx.strokeStyle = e.color;
       
       if (e.type === 'ship') {
-        // کشتی جنگی سطحی
         ctx.beginPath();
         ctx.moveTo(e.x, e.y + e.height); 
         ctx.lineTo(e.x + e.width, e.y + e.height);
         ctx.lineTo(e.x + e.width - 10, e.y); 
         ctx.lineTo(e.x + 10, e.y); 
         ctx.fill();
-        ctx.fillRect(e.x + 15, e.y - 10, 10, 10); // دکل
-        ctx.fillRect(e.x + 18, e.y - 15, 4, 5); // پرچم
+        ctx.fillRect(e.x + 15, e.y - 10, 10, 10);
+        ctx.fillRect(e.x + 18, e.y - 15, 4, 5); 
       } else if (e.type === 'sub') {
-        // زیردریایی دشمن
         ctx.beginPath(); 
         ctx.roundRect(e.x, e.y, e.width, e.height, 5); 
         ctx.fill();
         ctx.fillRect(e.x + 10, e.y - 5, 8, 5); 
       } else if (e.type === 'mine') {
-        // مین
         ctx.beginPath();
         ctx.arc(e.x + e.width/2, e.y + e.height/2, e.width/2, 0, Math.PI*2);
         ctx.fill();
