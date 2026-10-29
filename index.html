@@ -34,7 +34,7 @@
 <div id="game-container">
   <div id="ui-layer">
     <div>امتیاز: <span id="score">0</span></div>
-    <div>جان: <span id="lives">3</span></div>
+    <div>جان: <span id="lives">5</span></div>
   </div>
   <canvas id="gameCanvas" width="400" height="500"></canvas>
   <div id="game-over">
@@ -46,31 +46,46 @@
 <script>
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
-  let score = 0; let lives = 3; let gameActive = false; let animationId; let lastTime = 0;
-  const player = { x: 50, y: canvas.height / 2, width: 40, height: 20, speed: 4, color: '#fbbf24' };
+  let score = 0; let lives = 5; let gameActive = false; let animationId; let lastTime = 0;
+  
+  // پارامترهای سختی
+  const PLAYER_SPEED = 6;         // سرعت حرکت زیردریایی شما
+  const TORPEDO_SPEED = 8;        // سرعت اژدر شما
+  const BASE_ENEMY_SPEED = 2.0;   // سرعت پایه دشمنان (بیشتر = سخت‌تر)
+  const SPAWN_RATE = 1500;        // هر چند میلی‌ثانیه دشمن جدید (کمتر = سخت‌تر)
+
+  const player = { x: 50, y: canvas.height / 2, width: 40, height: 20, speed: PLAYER_SPEED, color: '#fbbf24' };
   let enemies = []; let torpedoes = [];
   let keys = {}; let touchY = null; let isTouching = false; let lastFireTime = 0;
-  const ENEMY_SPAWN_RATE = 1200; const ENEMY_SPEED = 1.5; let lastEnemySpawn = 0;
+  let lastEnemySpawn = 0;
 
   window.addEventListener('keydown', e => keys[e.code] = true);
   window.addEventListener('keyup', e => keys[e.code] = false);
+  
+  // کنترل‌های لمسی
   canvas.addEventListener('touchstart', handleTouch, {passive: false});
   canvas.addEventListener('touchmove', handleTouch, {passive: false});
   canvas.addEventListener('touchend', (e) => { isTouching = false; e.preventDefault(); });
-  canvas.addEventListener('mousedown', (e) => { if(gameActive) fireTorpedo(); });
+  canvas.addEventListener('mousedown', () => { if(gameActive) fireTorpedo(); });
 
   function handleTouch(e) {
     e.preventDefault(); if (!gameActive) return;
-    const rect = canvas.getBoundingClientRect(); const touch = e.touches[0];
-    touchY = touch.clientY - rect.top; isTouching = true;
+    const rect = canvas.getBoundingClientRect(); 
+    const touch = e.touches[0];
+    touchY = touch.clientY - rect.top; 
+    isTouching = true;
+    
+    // اگر سمت چپ صفحه لمس شود، شلیک کن
     const touchX = touch.clientX - rect.left;
-    if (touchX < 100) fireTorpedo();
+    if (touchX < canvas.width / 3) {
+      fireTorpedo();
+    }
   }
 
   function fireTorpedo() {
     const now = Date.now();
-    if (now - lastFireTime > 300) {
-      torpedoes.push({ x: player.x + player.width, y: player.y + player.height / 2, width: 15, height: 4, speed: 7 });
+    if (now - lastFireTime > 250) { // افزایش سرعت شلیک
+      torpedoes.push({ x: player.x + player.width, y: player.y + player.height / 2, width: 15, height: 4, speed: TORPEDO_SPEED });
       lastFireTime = now;
     }
   }
@@ -79,14 +94,17 @@
     const y = Math.random() * (canvas.height - 40) + 20;
     const type = Math.random() > 0.5 ? 'ship' : 'sub';
     enemies.push({
-      x: canvas.width, y: y, width: type === 'ship' ? 40 : 30, height: type === 'ship' ? 25 : 15,
-      speed: ENEMY_SPEED + (score * 0.05), color: type === 'ship' ? '#ef4444' : '#9333ea',
+      x: canvas.width, y: y, 
+      width: type === 'ship' ? 40 : 30, 
+      height: type === 'ship' ? 25 : 15,
+      speed: BASE_ENEMY_SPEED + (score * 0.02), // سرعت با امتیاز کمی بیشتر می‌شود
+      color: type === 'ship' ? '#ef4444' : '#9333ea',
       type: type, points: type === 'ship' ? 10 : 20
     });
   }
 
   function resetGame() {
-    score = 0; lives = 3; player.y = canvas.height / 2; enemies = []; torpedoes = []; gameActive = true;
+    score = 0; lives = 5; player.y = canvas.height / 2; enemies = []; torpedoes = []; gameActive = true;
     document.getElementById('score').innerText = score;
     document.getElementById('lives').innerText = lives;
     document.getElementById('game-over').style.display = 'none';
@@ -103,36 +121,58 @@
   }
 
   function update(dt) {
+    // حرکت با کیبورد
     if (keys['ArrowUp'] || keys['KeyW']) player.y -= player.speed;
     if (keys['ArrowDown'] || keys['KeyS']) player.y += player.speed;
     if (keys['Space']) fireTorpedo();
+    
+    // حرکت نرم با لمس
     if (isTouching && touchY !== null) {
       const diff = touchY - (player.y + player.height / 2);
-      player.y += diff * 0.2;
+      player.y += diff * 0.3; // ضریب نرمی (0.1 کند و 1 سریع)
     }
+    
     if (player.y < 0) player.y = 0;
     if (player.y > canvas.height - player.height) player.y = canvas.height - player.height;
 
-    if (performance.now() - lastEnemySpawn > ENEMY_SPAWN_RATE) { spawnEnemy(); lastEnemySpawn = performance.now(); }
+    // تولید دشمن
+    if (performance.now() - lastEnemySpawn > SPAWN_RATE) { 
+      spawnEnemy(); 
+      lastEnemySpawn = performance.now(); 
+    }
 
+    // حرکت اژدرها
     for (let i = torpedoes.length - 1; i >= 0; i--) {
       torpedoes[i].x += torpedoes[i].speed;
       if (torpedoes[i].x > canvas.width) torpedoes.splice(i, 1);
     }
 
+    // منطق برخوردها
     for (let i = enemies.length - 1; i >= 0; i--) {
-      const e = enemies[i]; e.x -= e.speed;
+      const e = enemies[i]; 
+      e.x -= e.speed;
+      
+      // برخورد دشمن با شما
       if (e.x < player.x + player.width && e.x + e.width > player.x && e.y < player.y + player.height && e.y + e.height > player.y) {
-        enemies.splice(i, 1); lives--; document.getElementById('lives').innerText = lives;
+        enemies.splice(i, 1); 
+        lives--; 
+        document.getElementById('lives').innerText = lives;
         if (lives <= 0) endGame();
         continue;
       }
+      
+      // خروج دشمن از صفحه
       if (e.x + e.width < 0) { enemies.splice(i, 1); continue; }
+      
+      // برخورد اژدر با دشمن
       for (let j = torpedoes.length - 1; j >= 0; j--) {
         const t = torpedoes[j];
         if (t.x < e.x + e.width && t.x + t.width > e.x && t.y < e.y + e.height && t.y + t.height > e.y) {
-          enemies.splice(i, 1); torpedoes.splice(j, 1); score += e.points;
-          document.getElementById('score').innerText = score; break;
+          enemies.splice(i, 1); 
+          torpedoes.splice(j, 1); 
+          score += e.points;
+          document.getElementById('score').innerText = score; 
+          break;
         }
       }
     }
@@ -140,20 +180,30 @@
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // خطوط موج دریا
     ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 2;
     for (let i = 0; i < canvas.height; i += 30) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i + 10); ctx.stroke(); }
+    
+    // زیردریایی شما
     ctx.fillStyle = player.color; ctx.beginPath();
     ctx.roundRect(player.x, player.y, player.width, player.height, 10); ctx.fill();
     ctx.fillRect(player.x + 10, player.y - 6, 12, 8);
     ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(player.x - 8, player.y + 10); ctx.lineTo(player.x, player.y + 20); ctx.fill();
+    
+    // اژدرها
     ctx.fillStyle = '#60a5fa';
     torpedoes.forEach(t => ctx.fillRect(t.x, t.y, t.width, t.height));
+    
+    // دشمنان
     enemies.forEach(e => {
       ctx.fillStyle = e.color;
       if (e.type === 'ship') {
         ctx.beginPath(); ctx.moveTo(e.x, e.y + e.height); ctx.lineTo(e.x + e.width, e.y + e.height);
         ctx.lineTo(e.x + e.width - 10, e.y); ctx.lineTo(e.x + 10, e.y); ctx.fill();
-      } else { ctx.beginPath(); ctx.roundRect(e.x, e.y, e.width, e.height, 5); ctx.fill(); }
+      } else { 
+        ctx.beginPath(); ctx.roundRect(e.x, e.y, e.width, e.height, 5); ctx.fill(); 
+      }
     });
   }
 
@@ -170,6 +220,7 @@
       this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); return this;
     };
   }
+  
   document.getElementById('restart-btn').onclick = resetGame;
   resetGame();
 </script>
