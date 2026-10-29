@@ -2,59 +2,76 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>زیردریایی</title>
 <style>
   body {
     margin: 0; padding: 0; background-color: #0f172a; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; height: 100vh; overflow: hidden;
+    align-items: center; justify-content: center; width: 100vw; height: 100vh; overflow: hidden;
     font-family: Tahoma, Arial, sans-serif; touch-action: none; user-select: none;
   }
   #game-container {
     position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center;
+    width: 100%; height: 100%;
   }
   canvas {
     background: linear-gradient(180deg, #1e3a8a 0%, #0f172a 100%);
-    border: 4px solid #334155; border-radius: 10px 10px 0 0; display: block;
+    display: block; width: 100%; height: 100%;
   }
   
-  #fire-btn-container {
-    width: 100%; background: #1e293b; padding: 15px 0; border: 4px solid #334155; border-top: none; border-radius: 0 0 10px 10px; display: flex; justify-content: center;
-  }
-  #fire-btn {
-    width: 80%; padding: 15px; background: #ef4444; color: white; font-size: 20px; font-weight: bold;
-    border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
-    transition: transform 0.1s, background 0.1s;
-  }
-  #fire-btn:active { transform: scale(0.95); background: #dc2626; }
-
   #ui-layer {
     position: absolute; top: 10px; left: 10px; right: 10px; display: flex;
-    justify-content: space-between; color: white; font-weight: bold; font-size: 16px; pointer-events: none;
+    justify-content: space-between; color: white; font-weight: bold; font-size: 18px; pointer-events: none;
+    padding: 0 15px;
   }
   
   #oxygen-container {
-    position: absolute; top: 35px; left: 10px; right: 10px; height: 10px;
+    position: absolute; top: 40px; left: 15px; right: 15px; height: 12px;
     background: #334155; border-radius: 5px; overflow: hidden; pointer-events: none;
   }
   #oxygen-bar {
     height: 100%; width: 100%; background: #3b82f6; transition: width 0.1s linear;
   }
 
+  /* دکمه شلیک شیشه‌ای */
+  #fire-btn {
+    position: absolute; bottom: 20px; left: 20px; width: 80px; height: 80px;
+    background: rgba(239, 68, 68, 0.4); border: 2px solid rgba(239, 68, 68, 0.8);
+    border-radius: 50%; color: white; font-size: 16px; font-weight: bold;
+    backdrop-filter: blur(5px); box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    transition: all 0.1s; z-index: 10;
+  }
+  #fire-btn.active {
+    background: rgba(239, 68, 68, 0.9); box-shadow: 0 0 20px rgba(239, 68, 68, 0.8); transform: scale(0.95);
+  }
+
+  /* جوی استیک */
+  #joystick-area {
+    position: absolute; bottom: 20px; right: 20px; width: 110px; height: 110px;
+    background: rgba(51, 65, 85, 0.5); border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%; backdrop-filter: blur(5px); z-index: 10; touch-action: none;
+  }
+  #joystick-knob {
+    position: absolute; top: 50%; left: 50%; width: 50px; height: 50px;
+    background: rgba(255, 255, 255, 0.8); border-radius: 50%;
+    transform: translate(-50%, -50%); box-shadow: 0 2px 10px rgba(0,0,0,0.5); pointer-events: none;
+  }
+
+  /* صفحه گیم اور */
   #game-over {
     position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: none;
-    flex-direction: column; align-items: center; justify-content: center; color: white; border-radius: 10px;
-    z-index: 100;
+    flex-direction: column; align-items: center; justify-content: center; color: white; z-index: 100;
   }
   #game-over-box {
-    background: #1e293b; padding: 30px; border-radius: 15px; border: 2px solid #475569;
-    text-align: center; width: 80%; max-width: 300px;
+    background: #1e293b; padding: 25px 40px; border-radius: 15px; border: 2px solid #475569;
+    text-align: center; min-width: 300px;
   }
-  #game-over h2 { margin: 0 0 15px 0; font-size: 26px; color: #ef4444; }
-  #game-over p { margin: 5px 0 20px 0; font-size: 18px; }
-  .btn-group { display: flex; gap: 10px; justify-content: center; }
+  #game-over h2 { margin: 0 0 15px 0; font-size: 28px; color: #ef4444; }
+  #game-over p { margin: 5px 0 20px 0; font-size: 20px; }
+  .btn-group { display: flex; gap: 15px; justify-content: center; }
   .btn-group button {
-    flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-family: inherit;
+    padding: 12px 25px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-family: inherit;
   }
   .btn-restart { background: #10b981; color: white; font-weight: bold; }
   .btn-close { background: #64748b; color: white; }
@@ -62,16 +79,18 @@
 </head>
 <body>
 <div id="game-container">
+  <canvas id="gameCanvas"></canvas>
+  
   <div id="ui-layer">
     <div>امتیاز: <span id="score">0</span></div>
     <div>جان: <span id="lives">3</span></div>
   </div>
   <div id="oxygen-container"><div id="oxygen-bar"></div></div>
   
-  <canvas id="gameCanvas" width="400" height="450"></canvas>
-  
-  <div id="fire-btn-container">
-    <button id="fire-btn">شلیک (FIRE)</button>
+  <button id="fire-btn">شلیک</button>
+
+  <div id="joystick-area">
+    <div id="joystick-knob"></div>
   </div>
 
   <div id="game-over">
@@ -80,7 +99,7 @@
       <p>امتیاز شما: <span id="final-score">0</span></p>
       <div class="btn-group">
         <button class="btn-restart" onclick="resetGame()">شروع مجدد</button>
-        <button class="btn-close" onclick="alert('برای بستن برنامه از دکمه بازگشت گوشی استفاده کنید.')">بستن</button>
+        <button class="btn-close" onclick="exitApp()">خروج از بازی</button>
       </div>
     </div>
   </div>
@@ -89,27 +108,42 @@
 <script>
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
-  const fireBtn = document.getElementById('fire-btn');
   
-  let score = 0; 
-  let lives = 3; 
-  let gameActive = false; 
-  let animationId; 
-  let lastTime = 0;
-  
-  // تنظیمات
-  const PLAYER_SPEED = 5;
-  const TORPEDO_SPEED = 8;
-  const BASE_ENEMY_SPEED = 1.2; 
-  const SPAWN_RATE = 1200; 
-  
-  // پارامترهای اکسیژن
-  const MAX_OXYGEN = 100;
-  let oxygen = MAX_OXYGEN;
-  const OXYGEN_DRAIN_RATE = 2.5; 
-  const OXYGEN_REFILL_RATE = 25; 
+  // تابع خروج از برنامه در اندروید
+  function exitApp() {
+      if (window.Capacitor && window.Capacitor.Plugins.App) {
+          window.Capacitor.Plugins.App.exitApp();
+      } else {
+          alert('برای خروج، از دکمه بازگشت گوشی استفاده کنید.');
+      }
+  }
 
-  // ====== سیستم صوتی داخلی (بدون نیاز به فایل) ======
+  // تنظیم ابعاد Canvas بر اساس اندازه صفحه (پاسخگو)
+  function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+  }
+  window.addEventListener('resize', resizeCanvas);
+  window.addEventListener('orientationchange', () => {
+      setTimeout(resizeCanvas, 100);
+  });
+  resizeCanvas();
+
+  const fireBtn = document.getElementById('fire-btn');
+  const joystickArea = document.getElementById('joystick-area');
+  const joystickKnob = document.getElementById('joystick-knob');
+  
+  let score = 0, lives = 3, gameActive = false, animationId, lastTime = 0;
+  let oxygen = 100, particles = [];
+  
+  const PLAYER_SPEED = 4;
+  const TORPEDO_SPEED = 10;
+  const BASE_ENEMY_SPEED = 1.5; 
+  const SPAWN_RATE = 1200; 
+  const OXYGEN_DRAIN_RATE = 4.0; 
+  const OXYGEN_REFILL_RATE = 30; 
+
+  // سیستم صوتی
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   function playSound(type) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -119,126 +153,117 @@
     const now = audioCtx.currentTime;
     
     if (type === 'shoot') {
-      osc.type = 'square';
-      osc.frequency.setValueAtTime(800, now);
-      osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
-      gain.gain.setValueAtTime(0.05, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+      osc.type = 'square'; osc.frequency.setValueAtTime(800, now); osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+      gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
       osc.start(now); osc.stop(now + 0.1);
     } else if (type === 'explosion') {
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(150, now);
-      osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
-      gain.gain.setValueAtTime(0.1, now);
-      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
-      osc.start(now); osc.stop(now + 0.3);
-    } else if (type === 'save') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(400, now);
-      osc.frequency.linearRampToValueAtTime(800, now + 0.1);
-      osc.frequency.linearRampToValueAtTime(1200, now + 0.2);
-      gain.gain.setValueAtTime(0.1, now);
-      gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+      osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now); osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+      gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
       osc.start(now); osc.stop(now + 0.3);
     }
   }
 
-  // آبجکت‌های بازی
-  const player = { x: 50, y: canvas.height / 2, width: 40, height: 20, color: '#fbbf24' };
-  let enemies = []; 
-  let enemyTorpedoes = [];
-  let torpedoes = [];
-  let divers = [];
+  const player = { x: 50, y: canvas.height / 2, width: 45, height: 20, color: '#fbbf24' };
+  let enemies = [], enemyTorpedoes = [], torpedoes = [], divers = [];
   
-  // کنترل‌ها
-  let touchX = null;
-  let touchY = null; 
-  let isTouching = false; 
-  let lastFireTime = 0;
-  let lastEnemySpawn = 0;
-  let lastDiverSpawn = 0;
+  let joystickActive = false, joystickVector = { x: 0, y: 0 };
+  let lastFireTime = 0, lastEnemySpawn = 0, lastDiverSpawn = 0;
 
-  // تنظیم رویدادها
-  canvas.addEventListener('touchstart', handleTouch, {passive: false});
-  canvas.addEventListener('touchmove', handleTouch, {passive: false});
-  canvas.addEventListener('touchend', (e) => { isTouching = false; e.preventDefault(); });
-  canvas.addEventListener('mousedown', (e) => {
-    if (!gameActive) return;
-    const rect = canvas.getBoundingClientRect();
-    touchX = e.clientX - rect.left;
-    touchY = e.clientY - rect.top;
-    isTouching = true;
-  });
-  canvas.addEventListener('mouseup', () => { isTouching = false; });
-  canvas.addEventListener('mousemove', (e) => {
-    if (!gameActive || !isTouching) return;
-    const rect = canvas.getBoundingClientRect();
-    touchX = e.clientX - rect.left;
-    touchY = e.clientY - rect.top;
-  });
-  
-  fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); if(gameActive) fireTorpedo(); }, {passive: false});
-  fireBtn.addEventListener('mousedown', () => { if(gameActive) fireTorpedo(); });
+  // تنظیمات جوی استیک
+  joystickArea.addEventListener('touchstart', handleJoystickStart, {passive: false});
+  joystickArea.addEventListener('touchmove', handleJoystickMove, {passive: false});
+  joystickArea.addEventListener('touchend', handleJoystickEnd, {passive: false});
+  joystickArea.addEventListener('mousedown', handleJoystickStart);
+  window.addEventListener('mousemove', handleJoystickMove);
+  window.addEventListener('mouseup', handleJoystickEnd);
 
-  function handleTouch(e) {
+  function handleJoystickStart(e) {
     e.preventDefault(); if (!gameActive) return;
-    const rect = canvas.getBoundingClientRect(); 
-    const touch = e.touches[0];
-    touchX = touch.clientX - rect.left;
-    touchY = touch.clientY - rect.top; 
-    isTouching = true;
+    joystickActive = true; updateJoystick(e);
   }
+  function handleJoystickMove(e) {
+    if (!joystickActive) return;
+    e.preventDefault(); updateJoystick(e);
+  }
+  function handleJoystickEnd(e) {
+    if (!joystickActive) return;
+    joystickActive = false; joystickVector = { x: 0, y: 0 };
+    joystickKnob.style.transform = `translate(-50%, -50%)`;
+  }
+
+  function updateJoystick(e) {
+    const rect = joystickArea.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : e;
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    let deltaX = touch.clientX - centerX;
+    let deltaY = touch.clientY - centerY;
+    const maxDistance = rect.width / 2 - 15;
+    const distance = Math.sqrt(deltaX*deltaX + deltaY*deltaY);
+    
+    if (distance > maxDistance) {
+      deltaX = (deltaX / distance) * maxDistance;
+      deltaY = (deltaY / distance) * maxDistance;
+    }
+    joystickKnob.style.transform = `translate(calc(-50% + ${deltaX}px), calc(-50% + ${deltaY}px))`;
+    joystickVector.x = deltaX / maxDistance;
+    joystickVector.y = deltaY / maxDistance;
+  }
+
+  // دکمه شلیک
+  fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); if(gameActive) { fireTorpedo(); fireBtn.classList.add('active'); } }, {passive: false});
+  fireBtn.addEventListener('touchend', () => fireBtn.classList.remove('active'));
+  fireBtn.addEventListener('mousedown', () => { if(gameActive) { fireTorpedo(); fireBtn.classList.add('active'); } });
+  fireBtn.addEventListener('mouseup', () => fireBtn.classList.remove('active'));
+  fireBtn.addEventListener('mouseleave', () => fireBtn.classList.remove('active'));
 
   function fireTorpedo() {
     const now = Date.now();
-    if (now - lastFireTime > 300) {
-      torpedoes.push({ x: player.x + player.width, y: player.y + player.height / 2 - 2, width: 22, height: 4, speed: TORPEDO_SPEED });
+    if (now - lastFireTime > 250) {
+      torpedoes.push({ x: player.x + player.width, y: player.y + player.height / 2 - 2, width: 25, height: 5, speed: TORPEDO_SPEED });
       playSound('shoot');
       lastFireTime = now;
     }
   }
 
-  function getCurrentEnemySpeed() {
-    return BASE_ENEMY_SPEED + Math.floor(score / 500) * 0.3;
+  // ذرات انفجار
+  function createExplosion(x, y) {
+    for(let i=0; i<15; i++) {
+        particles.push({
+            x: x, y: y,
+            vx: (Math.random() - 0.5) * 6,
+            vy: (Math.random() - 0.5) * 6,
+            life: 1.0,
+            color: Math.random() > 0.5 ? '#ef4444' : '#fbbf24'
+        });
+    }
   }
 
   function spawnEnemy() {
     let y, type;
-    
-    if (score > 1500 && Math.random() > 0.4) {
-        type = 'ship';
-        y = 20; 
-    } else {
-        y = Math.random() * (canvas.height - 100) + 60;
-        const rand = Math.random();
-        if (score > 1500 && rand > 0.7) type = 'mine';
-        else type = 'sub';
+    if (score > 1500 && Math.random() > 0.4) { type = 'ship'; y = 30; } 
+    else {
+        y = Math.random() * (canvas.height - 150) + 80;
+        type = (score > 1500 && Math.random() > 0.7) ? 'mine' : 'sub';
     }
-
     enemies.push({
-      x: canvas.width, y: y, 
-      type: type, 
-      speed: getCurrentEnemySpeed(),
-      color: '#ffffff',
-      width: type === 'ship' ? 45 : (type === 'mine' ? 20 : 30),
-      height: type === 'ship' ? 15 : (type === 'mine' ? 20 : 15),
-      points: type === 'ship' ? 25 : (type === 'sub' ? 30 : 15),
-      lastFire: 0
+      x: canvas.width, y: y, type: type, speed: BASE_ENEMY_SPEED + (score/1000)*0.5, color: '#ffffff',
+      width: type === 'ship' ? 50 : (type === 'mine' ? 25 : 35),
+      height: type === 'ship' ? 18 : (type === 'mine' ? 25 : 18),
+      points: type === 'ship' ? 25 : (type === 'sub' ? 30 : 15), lastFire: 0
     });
   }
 
   function spawnDiver() {
-    const surfaceY = 30;
-    const y = Math.random() > 0.5 ? surfaceY : Math.random() * (canvas.height - 150) + 80;
-    divers.push({
-      x: canvas.width, y: y, width: 20, height: 20, speed: 1.2
-    });
+    const y = Math.random() > 0.5 ? 30 : Math.random() * (canvas.height - 200) + 100;
+    divers.push({ x: canvas.width, y: y, width: 25, height: 25, speed: 1.5 });
   }
 
   function resetGame() {
-    score = 0; lives = 3; oxygen = MAX_OXYGEN; 
-    player.x = 50;
-    player.y = canvas.height / 2; 
+    resizeCanvas();
+    score = 0; lives = 3; oxygen = 100; particles = [];
+    player.x = 50; player.y = canvas.height / 2; 
     enemies = []; torpedoes = []; enemyTorpedoes = []; divers = []; 
     gameActive = true;
     
@@ -247,9 +272,7 @@
     document.getElementById('game-over').style.display = 'none';
     document.getElementById('oxygen-bar').style.width = '100%';
     
-    lastTime = performance.now(); 
-    lastEnemySpawn = lastTime;
-    lastDiverSpawn = lastTime;
+    lastTime = performance.now(); lastEnemySpawn = lastTime; lastDiverSpawn = lastTime;
     if (animationId) cancelAnimationFrame(animationId);
     gameLoop(lastTime);
   }
@@ -258,23 +281,14 @@
     if (!gameActive) return;
     const dt = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
-    
-    update(dt); 
-    draw();
+    update(dt); draw();
     animationId = requestAnimationFrame(gameLoop);
   }
 
   function update(dt) {
-    // حرکت آزاد (عمودی و افقی)
-    if (isTouching && touchY !== null && touchX !== null) {
-      const targetX = touchX - 20; 
-      const targetY = touchY - 10; 
-      
-      const diffX = targetX - player.x;
-      const diffY = targetY - player.y;
-      
-      player.x += diffX * 0.15;
-      player.y += diffY * 0.15;
+    if (joystickActive) {
+      player.x += joystickVector.x * PLAYER_SPEED;
+      player.y += joystickVector.y * PLAYER_SPEED;
     }
     
     if (player.x < 0) player.x = 0;
@@ -282,31 +296,28 @@
     if (player.y < 0) player.y = 0;
     if (player.y > canvas.height - player.height) player.y = canvas.height - player.height;
 
-    // سیستم اکسیژن
-    if (player.y < 40) {
-      oxygen = Math.min(MAX_OXYGEN, oxygen + OXYGEN_REFILL_RATE * dt);
+    // اکسیژن
+    if (player.y < 50) {
+      oxygen = Math.min(100, oxygen + OXYGEN_REFILL_RATE * dt);
     } else {
       oxygen = Math.max(0, oxygen - OXYGEN_DRAIN_RATE * dt);
       if (oxygen <= 0) {
-        lives--;
-        document.getElementById('lives').innerText = lives;
-        oxygen = MAX_OXYGEN;
+        lives--; document.getElementById('lives').innerText = lives; oxygen = 100;
         if (lives <= 0) return endGame();
       }
     }
-    
     const oxBar = document.getElementById('oxygen-bar');
     oxBar.style.width = oxygen + '%';
     oxBar.style.background = oxygen < 30 ? '#ef4444' : '#3b82f6';
 
-    // تولید دشمن و غواص
-    if (performance.now() - lastEnemySpawn > SPAWN_RATE) { 
-      spawnEnemy(); 
-      lastEnemySpawn = performance.now(); 
-    }
-    if (performance.now() - lastDiverSpawn > 3000) { 
-      spawnDiver(); 
-      lastDiverSpawn = performance.now(); 
+    if (performance.now() - lastEnemySpawn > SPAWN_RATE) { spawnEnemy(); lastEnemySpawn = performance.now(); }
+    if (performance.now() - lastDiverSpawn > 3000) { spawnDiver(); lastDiverSpawn = performance.now(); }
+
+    // آپدیت ذرات انفجار
+    for(let i = particles.length - 1; i >= 0; i--) {
+        let p = particles[i];
+        p.x += p.vx; p.y += p.vy; p.life -= dt * 2;
+        if(p.life <= 0) particles.splice(i, 1);
     }
 
     // اژدرهای کاربر
@@ -315,63 +326,43 @@
       if (torpedoes[i].x > canvas.width) torpedoes.splice(i, 1);
     }
 
-    // اژدرهای دشمن
+    // اژدرهای دشمن (افقی)
     for (let i = enemyTorpedoes.length - 1; i >= 0; i--) {
       const et = enemyTorpedoes[i];
       et.x += et.vx;
-      et.y += et.vy;
-      if (et.x > canvas.width || et.x < -20 || et.y > canvas.height || et.y < -20) {
-        enemyTorpedoes.splice(i, 1);
-        continue;
-      }
+      if (et.x < -20) { enemyTorpedoes.splice(i, 1); continue; }
       
       if (et.x < player.x + player.width && et.x + et.width > player.x && 
           et.y < player.y + player.height && et.y + et.height > player.y) {
         enemyTorpedoes.splice(i, 1);
-        lives--;
-        document.getElementById('lives').innerText = lives;
+        lives--; document.getElementById('lives').innerText = lives;
+        createExplosion(player.x, player.y);
         if (lives <= 0) return endGame();
       }
     }
 
     // غواص‌ها
     for (let i = divers.length - 1; i >= 0; i--) {
-      const d = divers[i];
-      d.x -= d.speed;
+      const d = divers[i]; d.x -= d.speed;
       if (d.x + d.width < 0) { divers.splice(i, 1); continue; }
-      
       if (d.x < player.x + player.width && d.x + d.width > player.x && d.y < player.y + player.height && d.y + d.height > player.y) {
-        divers.splice(i, 1);
-        score += 50;
-        playSound('save');
+        divers.splice(i, 1); score += 50;
         document.getElementById('score').innerText = score;
       }
     }
 
     // دشمنان
     for (let i = enemies.length - 1; i >= 0; i--) {
-      const e = enemies[i]; 
-      e.x -= e.speed;
+      const e = enemies[i]; e.x -= e.speed;
       
-      if (score > 1000 && e.type === 'sub') {
-          if (performance.now() - e.lastFire > 2000 && Math.random() < 0.05) { 
-              const angle = Math.atan2(player.y - e.y, player.x - e.x);
-              const etSpeed = e.speed * 1.3; 
-              enemyTorpedoes.push({
-                  x: e.x,
-                  y: e.y + e.height/2,
-                  vx: Math.cos(angle) * etSpeed,
-                  vy: Math.sin(angle) * etSpeed,
-                  width: 10, height: 4, color: '#ef4444'
-              });
-              e.lastFire = performance.now();
-          }
+      if (score > 1000 && e.type === 'sub' && performance.now() - e.lastFire > 2000 && Math.random() < 0.05) { 
+          enemyTorpedoes.push({ x: e.x, y: e.y + e.height/2, vx: -e.speed * 1.4, width: 12, height: 4, color: '#ef4444' });
+          e.lastFire = performance.now();
       }
       
       if (e.x < player.x + player.width && e.x + e.width > player.x && e.y < player.y + player.height && e.y + e.height > player.y) {
-        enemies.splice(i, 1); 
-        lives--; 
-        document.getElementById('lives').innerText = lives;
+        enemies.splice(i, 1); lives--; document.getElementById('lives').innerText = lives;
+        createExplosion(player.x, player.y);
         if (lives <= 0) return endGame();
         continue;
       }
@@ -382,10 +373,15 @@
         const t = torpedoes[j];
         if (t.x < e.x + e.width && t.x + t.width > e.x && t.y < e.y + e.height && t.y + t.height > e.y) {
           enemies.splice(i, 1); 
-          torpedoes.splice(j, 1); 
-          score += e.points;
+          // انفجار اژدر
+          createExplosion(t.x, t.y); 
           playSound('explosion');
-          document.getElementById('score').innerText = score; 
+          
+          // اژدر دومی که از دهانه شلیک می‌شود (جانشین اژدر منفجر شده)
+          torpedoes.splice(j, 1);
+          fireTorpedo(); // شلیک خودکار اژدر جدید
+          
+          score += e.points; document.getElementById('score').innerText = score; 
           break;
         }
       }
@@ -395,78 +391,62 @@
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-    ctx.fillRect(0, 0, canvas.width, 40);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(0, 40); ctx.lineTo(canvas.width, 40); ctx.stroke();
+    // خط سطح آب
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)'; ctx.fillRect(0, 0, canvas.width, 50);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, 50); ctx.lineTo(canvas.width, 50); ctx.stroke();
 
     ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 2;
-    for (let i = 40; i < canvas.height; i += 30) { 
+    for (let i = 50; i < canvas.height; i += 40) { 
         ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i + 10); ctx.stroke(); 
     }
     
+    // غواص‌ها
     divers.forEach(d => {
         ctx.fillStyle = '#10b981'; 
-        ctx.save();
-        ctx.translate(d.x + 10, d.y + 10);
-        ctx.rotate(-0.4);
-        
-        ctx.beginPath(); ctx.arc(0, -8, 4, 0, Math.PI * 2); ctx.fill();
-        ctx.fillRect(-2, -4, 4, 10);
-        ctx.fillRect(-7, 0, 5, 2); 
-        ctx.fillRect(2, 0, 5, 2);  
-        ctx.fillRect(-4, 6, 3, 8);
-        ctx.fillRect(1, 6, 3, 8);
-        
+        ctx.save(); ctx.translate(d.x + 12, d.y + 12); ctx.rotate(-0.4);
+        ctx.beginPath(); ctx.arc(0, -8, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillRect(-3, -3, 6, 12);
+        ctx.fillRect(-8, 0, 6, 3); ctx.fillRect(3, 0, 6, 3);  
+        ctx.fillRect(-5, 8, 4, 10); ctx.fillRect(2, 8, 4, 10);
         ctx.restore();
     });
 
+    // بازیکن
     ctx.fillStyle = player.color; 
-    ctx.beginPath();
-    ctx.roundRect(player.x, player.y, player.width, player.height, 10); ctx.fill();
-    ctx.fillRect(player.x + 10, player.y - 6, 12, 8); 
-    ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(player.x - 8, player.y + 10); ctx.lineTo(player.x, player.y + 20); ctx.fill(); 
+    ctx.beginPath(); ctx.roundRect(player.x, player.y, player.width, player.height, 10); ctx.fill();
+    ctx.fillRect(player.x + 10, player.y - 6, 14, 8); 
+    ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(player.x - 10, player.y + 10); ctx.lineTo(player.x, player.y + 20); ctx.fill(); 
     
-    ctx.fillStyle = '#60a5fa';
-    torpedoes.forEach(t => ctx.fillRect(t.x, t.y, t.width, t.height));
+    // اژدرهای کاربر
+    ctx.fillStyle = '#60a5fa'; torpedoes.forEach(t => ctx.fillRect(t.x, t.y, t.width, t.height));
     
-    ctx.fillStyle = '#ef4444';
-    enemyTorpedoes.forEach(et => {
-        ctx.save();
-        ctx.translate(et.x, et.y);
-        ctx.rotate(Math.atan2(et.vy, et.vx));
-        ctx.fillRect(0, 0, et.width, et.height);
-        ctx.restore();
+    // اژدرهای دشمن
+    ctx.fillStyle = '#ef4444'; enemyTorpedoes.forEach(et => ctx.fillRect(et.x, et.y, et.width, et.height));
+    
+    // ذرات انفجار
+    particles.forEach(p => {
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.life;
+        ctx.fillRect(p.x, p.y, 4, 4);
+        ctx.globalAlpha = 1.0;
     });
     
+    // دشمنان
     enemies.forEach(e => {
-      ctx.fillStyle = e.color;
-      ctx.strokeStyle = e.color;
-      
+      ctx.fillStyle = e.color; ctx.strokeStyle = e.color;
       if (e.type === 'ship') {
-        ctx.beginPath();
-        ctx.moveTo(e.x, e.y + e.height); 
-        ctx.lineTo(e.x + e.width, e.y + e.height);
-        ctx.lineTo(e.x + e.width - 10, e.y); 
-        ctx.lineTo(e.x + 10, e.y); 
-        ctx.fill();
-        ctx.fillRect(e.x + 15, e.y - 10, 10, 10);
-        ctx.fillRect(e.x + 18, e.y - 15, 4, 5); 
+        ctx.beginPath(); ctx.moveTo(e.x, e.y + e.height); ctx.lineTo(e.x + e.width, e.y + e.height);
+        ctx.lineTo(e.x + e.width - 15, e.y); ctx.lineTo(e.x + 15, e.y); ctx.fill();
+        ctx.fillRect(e.x + 20, e.y - 12, 12, 12); ctx.fillRect(e.x + 24, e.y - 18, 4, 6); 
       } else if (e.type === 'sub') {
-        ctx.beginPath(); 
-        ctx.roundRect(e.x, e.y, e.width, e.height, 5); 
-        ctx.fill();
-        ctx.fillRect(e.x + 10, e.y - 5, 8, 5); 
+        ctx.beginPath(); ctx.roundRect(e.x, e.y, e.width, e.height, 6); ctx.fill();
+        ctx.fillRect(e.x + 12, e.y - 6, 10, 6); 
       } else if (e.type === 'mine') {
-        ctx.beginPath();
-        ctx.arc(e.x + e.width/2, e.y + e.height/2, e.width/2, 0, Math.PI*2);
-        ctx.fill();
-        ctx.lineWidth = 2;
-        ctx.beginPath();
+        ctx.beginPath(); ctx.arc(e.x + e.width/2, e.y + e.height/2, e.width/2, 0, Math.PI*2); ctx.fill();
+        ctx.lineWidth = 3; ctx.beginPath();
         ctx.moveTo(e.x, e.y); ctx.lineTo(e.x + e.width, e.y + e.height);
-        ctx.moveTo(e.x + e.width, e.y); ctx.lineTo(e.x, e.y + e.height);
-        ctx.stroke();
+        ctx.moveTo(e.x + e.width, e.y); ctx.lineTo(e.x, e.y + e.height); ctx.stroke();
       }
     });
   }
@@ -485,6 +465,7 @@
     };
   }
   
+  setTimeout(resizeCanvas, 100); // اطمینان از تنظیم ابعاد پس از لود
   resetGame();
 </script>
 </body>
