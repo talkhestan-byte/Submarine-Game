@@ -8,65 +8,137 @@
   body {
     margin: 0; padding: 0; background-color: #0f172a; display: flex; flex-direction: column;
     align-items: center; justify-content: center; height: 100vh; overflow: hidden;
-    font-family: Tahoma, Arial, sans-serif; touch-action: none;
+    font-family: Tahoma, Arial, sans-serif; touch-action: none; user-select: none;
   }
-  #game-container { position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+  #game-container {
+    position: relative; box-shadow: 0 0 20px rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center;
+  }
   canvas {
     background: linear-gradient(180deg, #1e3a8a 0%, #0f172a 100%);
-    border: 4px solid #334155; border-radius: 10px; display: block;
+    border: 4px solid #334155; border-radius: 10px 10px 0 0; display: block;
   }
+  
+  /* دکمه شلیک در پایین */
+  #fire-btn-container {
+    width: 100%; background: #1e293b; padding: 15px 0; border: 4px solid #334155; border-top: none; border-radius: 0 0 10px 10px; display: flex; justify-content: center;
+  }
+  #fire-btn {
+    width: 80%; padding: 15px; background: #ef4444; color: white; font-size: 20px; font-weight: bold;
+    border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+    transition: transform 0.1s, background 0.1s;
+  }
+  #fire-btn:active { transform: scale(0.95); background: #dc2626; }
+
   #ui-layer {
     position: absolute; top: 10px; left: 10px; right: 10px; display: flex;
-    justify-content: space-between; color: white; font-weight: bold; font-size: 18px; pointer-events: none;
+    justify-content: space-between; color: white; font-weight: bold; font-size: 16px; pointer-events: none;
   }
+  
+  /* نوار اکسیژن */
+  #oxygen-container {
+    position: absolute; top: 35px; left: 10px; right: 10px; height: 10px;
+    background: #334155; border-radius: 5px; overflow: hidden; pointer-events: none;
+  }
+  #oxygen-bar {
+    height: 100%; width: 100%; background: #3b82f6; transition: width 0.1s linear;
+  }
+
+  /* صفحه گیم اور */
   #game-over {
-    position: absolute; inset: 0; background: rgba(0,0,0,0.7); display: none;
+    position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: none;
     flex-direction: column; align-items: center; justify-content: center; color: white; border-radius: 10px;
+    z-index: 100;
   }
-  #game-over h2 { margin: 0 0 10px 0; font-size: 28px; color: #ef4444; }
-  #restart-btn {
-    padding: 10px 20px; background: #10b981; color: white; border: none;
-    border-radius: 5px; font-family: inherit; font-size: 16px; cursor: pointer; margin-top: 15px;
+  #game-over-box {
+    background: #1e293b; padding: 30px; border-radius: 15px; border: 2px solid #475569;
+    text-align: center; width: 80%; max-width: 300px;
   }
+  #game-over h2 { margin: 0 0 15px 0; font-size: 26px; color: #ef4444; }
+  #game-over p { margin: 5px 0 20px 0; font-size: 18px; }
+  .btn-group { display: flex; gap: 10px; justify-content: center; }
+  .btn-group button {
+    flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; font-family: inherit;
+  }
+  .btn-restart { background: #10b981; color: white; font-weight: bold; }
+  .btn-close { background: #64748b; color: white; }
 </style>
 </head>
 <body>
 <div id="game-container">
   <div id="ui-layer">
     <div>امتیاز: <span id="score">0</span></div>
-    <div>جان: <span id="lives">5</span></div>
+    <div>جان: <span id="lives">3</span></div>
   </div>
-  <canvas id="gameCanvas" width="400" height="500"></canvas>
+  <div id="oxygen-container"><div id="oxygen-bar"></div></div>
+  
+  <canvas id="gameCanvas" width="400" height="450"></canvas>
+  
+  <div id="fire-btn-container">
+    <button id="fire-btn">شلیک (FIRE)</button>
+  </div>
+
   <div id="game-over">
-    <h2>بازی تمام شد!</h2>
-    <div>امتیاز شما: <span id="final-score">0</span></div>
-    <button id="restart-btn">شروع مجدد</button>
+    <div id="game-over-box">
+      <h2>بازی تمام شد!</h2>
+      <p>امتیاز شما: <span id="final-score">0</span></p>
+      <div class="btn-group">
+        <button class="btn-restart" onclick="resetGame()">شروع مجدد</button>
+        <button class="btn-close" onclick="alert('برای بستن برنامه از دکمه بازگشت گوشی استفاده کنید.')">بستن</button>
+      </div>
+    </div>
   </div>
 </div>
+
 <script>
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
-  let score = 0; let lives = 5; let gameActive = false; let animationId; let lastTime = 0;
+  const fireBtn = document.getElementById('fire-btn');
   
-  // پارامترهای سختی
-  const PLAYER_SPEED = 6;         // سرعت حرکت زیردریایی شما
-  const TORPEDO_SPEED = 8;        // سرعت اژدر شما
-  const BASE_ENEMY_SPEED = 2.0;   // سرعت پایه دشمنان (بیشتر = سخت‌تر)
-  const SPAWN_RATE = 1500;        // هر چند میلی‌ثانیه دشمن جدید (کمتر = سخت‌تر)
+  let score = 0; 
+  let lives = 3; 
+  let gameActive = false; 
+  let animationId; 
+  let lastTime = 0;
+  
+  // تنظیمات
+  const PLAYER_SPEED = 5;
+  const TORPEDO_SPEED = 8;
+  const BASE_ENEMY_SPEED = 1.2; 
+  const SPAWN_RATE = 1200; 
+  
+  // پارامترهای اکسیژن
+  const MAX_OXYGEN = 100;
+  let oxygen = MAX_OXYGEN;
+  const OXYGEN_DRAIN_RATE = 2.5; // چقدر در ثانیه کم شود
+  const OXYGEN_REFILL_RATE = 25; // چقدر در ثانیه پر شود
 
-  const player = { x: 50, y: canvas.height / 2, width: 40, height: 20, speed: PLAYER_SPEED, color: '#fbbf24' };
-  let enemies = []; let torpedoes = [];
-  let keys = {}; let touchY = null; let isTouching = false; let lastFireTime = 0;
+  // آبجکت‌های بازی
+  const player = { x: 50, y: canvas.height / 2, width: 40, height: 20, color: '#fbbf24' };
+  let enemies = []; 
+  let torpedoes = [];
+  let divers = [];
+  
+  // کنترل‌ها
+  let touchY = null; 
+  let isTouching = false; 
+  let lastFireTime = 0;
   let lastEnemySpawn = 0;
+  let lastDiverSpawn = 0;
 
-  window.addEventListener('keydown', e => keys[e.code] = true);
-  window.addEventListener('keyup', e => keys[e.code] = false);
-  
-  // کنترل‌های لمسی
+  // تنظیم رویدادها
   canvas.addEventListener('touchstart', handleTouch, {passive: false});
   canvas.addEventListener('touchmove', handleTouch, {passive: false});
   canvas.addEventListener('touchend', (e) => { isTouching = false; e.preventDefault(); });
-  canvas.addEventListener('mousedown', () => { if(gameActive) fireTorpedo(); });
+  canvas.addEventListener('mousedown', (e) => {
+    if (!gameActive) return;
+    const rect = canvas.getBoundingClientRect();
+    touchY = e.clientY - rect.top;
+    isTouching = true;
+  });
+  canvas.addEventListener('mouseup', () => { isTouching = false; });
+  
+  fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); if(gameActive) fireTorpedo(); }, {passive: false});
+  fireBtn.addEventListener('mousedown', () => { if(gameActive) fireTorpedo(); });
 
   function handleTouch(e) {
     e.preventDefault(); if (!gameActive) return;
@@ -74,71 +146,119 @@
     const touch = e.touches[0];
     touchY = touch.clientY - rect.top; 
     isTouching = true;
-    
-    // اگر سمت چپ صفحه لمس شود، شلیک کن
-    const touchX = touch.clientX - rect.left;
-    if (touchX < canvas.width / 3) {
-      fireTorpedo();
-    }
   }
 
   function fireTorpedo() {
     const now = Date.now();
-    if (now - lastFireTime > 250) { // افزایش سرعت شلیک
+    if (now - lastFireTime > 300) {
       torpedoes.push({ x: player.x + player.width, y: player.y + player.height / 2, width: 15, height: 4, speed: TORPEDO_SPEED });
       lastFireTime = now;
     }
   }
 
+  function getCurrentEnemySpeed() {
+    // هر 500 امتیاز، 0.3 به سرعت اضافه می‌شود
+    return BASE_ENEMY_SPEED + Math.floor(score / 500) * 0.3;
+  }
+
   function spawnEnemy() {
-    const y = Math.random() * (canvas.height - 40) + 20;
-    const type = Math.random() > 0.5 ? 'ship' : 'sub';
+    const y = Math.random() * (canvas.height - 60) + 40;
+    const rand = Math.random();
+    let type = 'sub';
+    if (score > 1500) {
+        if (rand > 0.7) type = 'mine';
+        else if (rand > 0.4) type = 'ship';
+        else type = 'sub';
+    } else {
+        type = rand > 0.5 ? 'ship' : 'sub';
+    }
+
     enemies.push({
       x: canvas.width, y: y, 
-      width: type === 'ship' ? 40 : 30, 
-      height: type === 'ship' ? 25 : 15,
-      speed: BASE_ENEMY_SPEED + (score * 0.02), // سرعت با امتیاز کمی بیشتر می‌شود
-      color: type === 'ship' ? '#ef4444' : '#9333ea',
-      type: type, points: type === 'ship' ? 10 : 20
+      type: type, 
+      speed: getCurrentEnemySpeed(),
+      color: '#ffffff', // همه سفید
+      width: type === 'ship' ? 40 : (type === 'mine' ? 20 : 30),
+      height: type === 'ship' ? 20 : (type === 'mine' ? 20 : 15),
+      points: type === 'ship' ? 20 : (type === 'sub' ? 30 : 15)
+    });
+  }
+
+  function spawnDiver() {
+    const surfaceY = 30;
+    const y = Math.random() > 0.5 ? surfaceY : Math.random() * (canvas.height - 150) + 80;
+    divers.push({
+      x: canvas.width, y: y, width: 12, height: 20, speed: 1.0, saved: false
     });
   }
 
   function resetGame() {
-    score = 0; lives = 5; player.y = canvas.height / 2; enemies = []; torpedoes = []; gameActive = true;
+    score = 0; lives = 3; oxygen = MAX_OXYGEN; 
+    player.y = canvas.height / 2; 
+    enemies = []; torpedoes = []; divers = []; 
+    gameActive = true;
+    
     document.getElementById('score').innerText = score;
     document.getElementById('lives').innerText = lives;
     document.getElementById('game-over').style.display = 'none';
-    lastTime = performance.now(); lastEnemySpawn = lastTime;
+    document.getElementById('oxygen-bar').style.width = '100%';
+    
+    lastTime = performance.now(); 
+    lastEnemySpawn = lastTime;
+    lastDiverSpawn = lastTime;
     if (animationId) cancelAnimationFrame(animationId);
     gameLoop(lastTime);
   }
 
   function gameLoop(timestamp) {
     if (!gameActive) return;
-    const dt = timestamp - lastTime; lastTime = timestamp;
-    update(dt); draw();
+    const dt = (timestamp - lastTime) / 1000; // زمان به ثانیه
+    lastTime = timestamp;
+    
+    update(dt); 
+    draw();
     animationId = requestAnimationFrame(gameLoop);
   }
 
   function update(dt) {
-    // حرکت با کیبورد
-    if (keys['ArrowUp'] || keys['KeyW']) player.y -= player.speed;
-    if (keys['ArrowDown'] || keys['KeyS']) player.y += player.speed;
-    if (keys['Space']) fireTorpedo();
-    
-    // حرکت نرم با لمس
+    // کنترل حرکت (نرم)
     if (isTouching && touchY !== null) {
       const diff = touchY - (player.y + player.height / 2);
-      player.y += diff * 0.3; // ضریب نرمی (0.1 کند و 1 سریع)
+      player.y += diff * 0.2;
     }
     
+    // محدودیت‌ها
     if (player.y < 0) player.y = 0;
     if (player.y > canvas.height - player.height) player.y = canvas.height - player.height;
 
-    // تولید دشمن
+    // سیستم اکسیژن
+    if (player.y < 40) {
+      // در سطح آب: نفس بکش
+      oxygen = Math.min(MAX_OXYGEN, oxygen + OXYGEN_REFILL_RATE * dt);
+    } else {
+      // زیر آب: اکسیژن کم شود
+      oxygen = Math.max(0, oxygen - OXYGEN_DRAIN_RATE * dt);
+      if (oxygen <= 0) {
+        lives--;
+        document.getElementById('lives').innerText = lives;
+        oxygen = MAX_OXYGEN; // پر کردن برای جلوگیری از مرگ پشت سر هم
+        if (lives <= 0) return endGame();
+      }
+    }
+    
+    // آپدیت نوار اکسیژن در UI
+    const oxBar = document.getElementById('oxygen-bar');
+    oxBar.style.width = oxygen + '%';
+    oxBar.style.background = oxygen < 30 ? '#ef4444' : '#3b82f6';
+
+    // تولید دشمن و غواص
     if (performance.now() - lastEnemySpawn > SPAWN_RATE) { 
       spawnEnemy(); 
       lastEnemySpawn = performance.now(); 
+    }
+    if (performance.now() - lastDiverSpawn > 3000) { 
+      spawnDiver(); 
+      lastDiverSpawn = performance.now(); 
     }
 
     // حرکت اژدرها
@@ -147,7 +267,21 @@
       if (torpedoes[i].x > canvas.width) torpedoes.splice(i, 1);
     }
 
-    // منطق برخوردها
+    // حرکت غواص‌ها
+    for (let i = divers.length - 1; i >= 0; i--) {
+      const d = divers[i];
+      d.x -= d.speed;
+      if (d.x + d.width < 0) { divers.splice(i, 1); continue; }
+      
+      // برخورد زیردریایی شما با غواص (نجات)
+      if (d.x < player.x + player.width && d.x + d.width > player.x && d.y < player.y + player.height && d.y + d.height > player.y) {
+        divers.splice(i, 1);
+        score += 50;
+        document.getElementById('score').innerText = score;
+      }
+    }
+
+    // برخوردها و آپدیت دشمنان
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i]; 
       e.x -= e.speed;
@@ -157,11 +291,11 @@
         enemies.splice(i, 1); 
         lives--; 
         document.getElementById('lives').innerText = lives;
-        if (lives <= 0) endGame();
+        if (lives <= 0) return endGame();
         continue;
       }
       
-      // خروج دشمن از صفحه
+      // خروج دشمن
       if (e.x + e.width < 0) { enemies.splice(i, 1); continue; }
       
       // برخورد اژدر با دشمن
@@ -181,28 +315,68 @@
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // خطوط موج دریا
+    // خط سطح آب
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.fillRect(0, 0, canvas.width, 40);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.beginPath(); ctx.moveTo(0, 40); ctx.lineTo(canvas.width, 40); ctx.stroke();
+
+    // موج‌ها
     ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 2;
-    for (let i = 0; i < canvas.height; i += 30) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i + 10); ctx.stroke(); }
+    for (let i = 40; i < canvas.height; i += 30) { 
+        ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i + 10); ctx.stroke(); 
+    }
     
+    // غواص‌ها
+    divers.forEach(d => {
+        ctx.fillStyle = '#10b981'; // سبز
+        ctx.beginPath();
+        ctx.arc(d.x + 6, d.y + 5, 5, 0, Math.PI * 2); // سر
+        ctx.fill();
+        ctx.fillRect(d.x + 3, d.y + 10, 6, 10); // بدن
+    });
+
     // زیردریایی شما
-    ctx.fillStyle = player.color; ctx.beginPath();
+    ctx.fillStyle = player.color; 
+    ctx.beginPath();
     ctx.roundRect(player.x, player.y, player.width, player.height, 10); ctx.fill();
-    ctx.fillRect(player.x + 10, player.y - 6, 12, 8);
-    ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(player.x - 8, player.y + 10); ctx.lineTo(player.x, player.y + 20); ctx.fill();
+    ctx.fillRect(player.x + 10, player.y - 6, 12, 8); // برجک
+    ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(player.x - 8, player.y + 10); ctx.lineTo(player.x, player.y + 20); ctx.fill(); // باله
     
     // اژدرها
     ctx.fillStyle = '#60a5fa';
     torpedoes.forEach(t => ctx.fillRect(t.x, t.y, t.width, t.height));
     
-    // دشمنان
+    // دشمنان (سفید)
     enemies.forEach(e => {
       ctx.fillStyle = e.color;
+      ctx.strokeStyle = e.color;
+      
       if (e.type === 'ship') {
-        ctx.beginPath(); ctx.moveTo(e.x, e.y + e.height); ctx.lineTo(e.x + e.width, e.y + e.height);
-        ctx.lineTo(e.x + e.width - 10, e.y); ctx.lineTo(e.x + 10, e.y); ctx.fill();
-      } else { 
-        ctx.beginPath(); ctx.roundRect(e.x, e.y, e.width, e.height, 5); ctx.fill(); 
+        // کشتی جنگی
+        ctx.beginPath();
+        ctx.moveTo(e.x, e.y + e.height); 
+        ctx.lineTo(e.x + e.width, e.y + e.height);
+        ctx.lineTo(e.x + e.width - 10, e.y); 
+        ctx.lineTo(e.x + 10, e.y); 
+        ctx.fill();
+        ctx.fillRect(e.x + 15, e.y - 8, 10, 8); // دکل
+      } else if (e.type === 'sub') {
+        // زیردریایی دشمن
+        ctx.beginPath(); 
+        ctx.roundRect(e.x, e.y, e.width, e.height, 5); 
+        ctx.fill();
+        ctx.fillRect(e.x + 10, e.y - 5, 8, 5); // برجک
+      } else if (e.type === 'mine') {
+        // مین دریایی (دایره با خار)
+        ctx.beginPath();
+        ctx.arc(e.x + e.width/2, e.y + e.height/2, e.width/2, 0, Math.PI*2);
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(e.x, e.y); ctx.lineTo(e.x + e.width, e.y + e.height);
+        ctx.moveTo(e.x + e.width, e.y); ctx.lineTo(e.x, e.y + e.height);
+        ctx.stroke();
       }
     });
   }
@@ -221,7 +395,6 @@
     };
   }
   
-  document.getElementById('restart-btn').onclick = resetGame;
   resetGame();
 </script>
 </body>
