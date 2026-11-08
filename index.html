@@ -6,84 +6,32 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#001b70">
 <title>زیردریایی</title>
-
 <style>
 *{box-sizing:border-box}
-html,body{
- margin:0;width:100%;height:100%;overflow:hidden;
- background:#00104e;touch-action:none;user-select:none;
- font-family:Tahoma,Arial,sans-serif
-}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#00104e;touch-action:none;user-select:none;font-family:Tahoma,Arial,sans-serif}
 #game-container{position:relative;width:100%;height:100%;overflow:hidden}
 canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
-#hud{
- position:absolute;top:0;left:0;right:0;height:58px;
- display:flex;justify-content:space-between;align-items:center;
- padding:8px 14px;color:white;font-weight:bold;pointer-events:none;
- background:linear-gradient(180deg,rgba(0,0,0,.35),transparent)
-}
+#hud{position:absolute;top:0;left:0;right:0;height:58px;display:flex;justify-content:space-between;align-items:center;padding:8px 14px;color:white;font-weight:bold;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.35),transparent)}
 .stat{font-size:14px;text-shadow:2px 2px #001044}
 #divers{display:flex;gap:3px}
 .diver-icon{width:13px;height:9px;background:#55df63}
-#oxygen-panel{
- position:absolute;bottom:12px;left:50%;transform:translateX(-50%);
- width:min(43%,320px);height:15px;border:2px solid #ddd;
- background:#252525;pointer-events:none
-}
-#oxygen-bar{height:100%;width:100%;background:#e8e8e8}
-#oxygen-label{
- position:absolute;bottom:31px;left:50%;transform:translateX(-50%);
- color:white;font-size:12px;font-weight:bold;text-shadow:2px 2px #001044
-}
-#controls{
- position:absolute;bottom:42px;left:16px;right:16px;
- display:flex;align-items:flex-end;justify-content:space-between;
- pointer-events:none
-}
-#fire-btn{
- pointer-events:auto;width:76px;height:76px;border-radius:50%;
- border:3px solid #f2d44c;background:rgba(15,35,120,.9);
- color:white;font-size:15px;font-weight:bold;
- box-shadow:3px 4px 0 #07134d;touch-action:none
-}
+#oxygen-panel{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);width:min(43%,320px);height:15px;border:2px solid #ddd;background:#252525;pointer-events:none}
+#oxygen-bar{height:100%;width:100%;background:#e8e8e8;transition:background .2s}
+#oxygen-label{position:absolute;bottom:31px;left:50%;transform:translateX(-50%);color:white;font-size:12px;font-weight:bold;text-shadow:2px 2px #001044}
+#controls{position:absolute;bottom:42px;left:16px;right:16px;display:flex;align-items:flex-end;justify-content:space-between;pointer-events:none}
+#fire-btn{pointer-events:auto;width:76px;height:76px;border-radius:50%;border:3px solid #f2d44c;background:rgba(15,35,120,.9);color:white;font-size:15px;font-weight:bold;box-shadow:3px 4px 0 #07134d;touch-action:none}
 #fire-btn.active{background:#d54b25;transform:scale(.94)}
-#joystick-area{
- pointer-events:auto;width:112px;height:112px;
- border:3px solid rgba(255,255,255,.65);border-radius:50%;
- background:rgba(10,35,100,.65);position:relative;touch-action:none
-}
-#joystick-knob{
- position:absolute;width:47px;height:47px;top:50%;left:50%;
- transform:translate(-50%,-50%);border-radius:50%;
- background:#ead54b;border:3px solid white;
- box-shadow:2px 3px 0 #17265c;pointer-events:none
-}
-#message{
- position:absolute;top:70px;left:50%;transform:translateX(-50%);
- color:#ffeb65;font-size:14px;font-weight:bold;
- text-shadow:2px 2px #001044;opacity:0;pointer-events:none;
- white-space:nowrap
-}
-#game-over,#start-screen{
- position:absolute;inset:0;display:flex;align-items:center;
- justify-content:center;background:rgba(0,10,45,.9);
- color:white;z-index:20
-}
+#joystick-area{pointer-events:auto;width:112px;height:112px;border:3px solid rgba(255,255,255,.65);border-radius:50%;background:rgba(10,35,100,.65);position:relative;touch-action:none}
+#joystick-knob{position:absolute;width:47px;height:47px;top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;background:#ead54b;border:3px solid white;box-shadow:2px 3px 0 #17265c;pointer-events:none}
+#message{position:absolute;top:70px;left:50%;transform:translateX(-50%);color:#ffeb65;font-size:14px;font-weight:bold;text-shadow:2px 2px #001044;opacity:0;pointer-events:none;white-space:nowrap}
+#game-over,#start-screen{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,10,45,.9);color:white;z-index:20}
 #game-over{display:none}
-.panel{
- text-align:center;background:#09266f;border:4px solid #f3d85c;
- padding:25px;width:min(90%,370px);box-shadow:5px 5px #001044
-}
+.panel{text-align:center;background:#09266f;border:4px solid #f3d85c;padding:25px;width:min(90%,370px);box-shadow:5px 5px #001044}
 .panel h1,.panel h2{color:#ffdf55}
 .panel p{font-size:14px;line-height:2}
-.game-btn{
- border:2px solid white;padding:12px 23px;font-size:15px;
- font-weight:bold;background:#e3b52e;color:#10205c;
- border-radius:4px;margin:5px
-}
+.game-btn{border:2px solid white;padding:12px 23px;font-size:15px;font-weight:bold;background:#e3b52e;color:#10205c;border-radius:4px;margin:5px}
 @media(max-height:480px){
- #hud{height:42px}
- #controls{bottom:28px}
+ #hud{height:42px}#controls{bottom:28px}
  #joystick-area{width:85px;height:85px}
  #joystick-knob{width:38px;height:38px}
  #fire-btn{width:62px;height:62px}
@@ -92,7 +40,6 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
 }
 </style>
 </head>
-
 <body>
 <div id="game-container">
 <canvas id="gameCanvas"></canvas>
@@ -102,7 +49,6 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
  <div class="stat">غواصان: <span id="divers"></span></div>
  <div class="stat">جان: <span id="lives">3</span></div>
 </div>
-
 <div id="message"></div>
 
 <div id="controls">
@@ -119,7 +65,8 @@ canvas{display:block;width:100%;height:100%;image-rendering:pixelated}
   <p>
    زیردریایی را با جوی‌استیک حرکت بده.<br>
    با یک دکمه در جهت حرکت شلیک کن.<br>
-   غواصان را نجات بده و اکسیژن را حفظ کن.
+   غواصان را نجات بده و اکسیژن را حفظ کن.<br>
+   برای شارژ اکسیژن به سطح آب برو.
   </p>
   <button class="game-btn" id="start-btn">شروع بازی</button>
  </div>
@@ -143,35 +90,34 @@ const canvas=$('gameCanvas');
 const ctx=canvas.getContext('2d');
 
 let W=0,H=0,seaLine=0,floorLine=0;
-let score=0,lives=3,oxygen=100;
-let savedDivers=0;
+let score=0,lives=3,oxygen=100,savedDivers=0;
 let active=false,gameEnded=false;
 let lastTime=0,elapsed=0;
-let enemyTimer=0,diverTimer=0;
-let fireHeld=false,fireTimer=0;
+let enemyTimer=0,diverTimer=0,fireHeld=false,fireTimer=0;
 let joystickActive=false;
 let joystickVector={x:0,y:0};
+let keyboardVector={x:0,y:0};
 let invulnerable=0,respawnTimer=0;
 let screenShake=0,messageTimer=0;
 let audioCtx=null;
+let refillSoundNodes=null;
+let boostApplied=false;
 
-let enemies=[],torpedoes=[],enemyTorpedoes=[];
-let divers=[],particles=[];
+let enemies=[],torpedoes=[],enemyTorpedoes=[],divers=[],particles=[];
 
 const CFG={
- acceleration:620,
- friction:0.88,
- maxSpeed:220,
- fireInterval:.28,
- torpedoSpeed:450,
+ acceleration:1150,
+ friction:.94,
+ maxSpeed:310,
+ fireInterval:.22,
+ torpedoSpeed:680,
  oxygenDrain:4,
- oxygenRefill:35
+ oxygenRefill:38
 };
 
 const player={
  x:70,y:200,vx:0,vy:0,
- width:54,height:25,
- direction:1
+ width:54,height:25,direction:1
 };
 
 function resize(){
@@ -182,7 +128,8 @@ function resize(){
  ctx.setTransform(dpr,0,0,dpr,0,0);
  seaLine=Math.max(65,H*.20);
  floorLine=H-55;
- player.y=Math.max(seaLine+30,Math.min(player.y,floorLine-player.height));
+ const topLimit=seaLine-player.height+3;
+ player.y=Math.max(topLimit,Math.min(player.y,floorLine-player.height));
  player.x=Math.max(0,Math.min(player.x,W-player.width));
 }
 window.addEventListener('resize',resize);
@@ -230,6 +177,60 @@ function noise(d=.4,v=.2){
  source.start();
 }
 
+function startRefillSound(){
+ if(!audioCtx||refillSoundNodes)return;
+ const now=audioCtx.currentTime;
+
+ const osc=audioCtx.createOscillator();
+ const oscGain=audioCtx.createGain();
+ const filter=audioCtx.createBiquadFilter();
+ filter.type='lowpass';
+ filter.frequency.value=1100;
+ osc.type='sawtooth';
+ osc.frequency.setValueAtTime(100,now);
+ osc.frequency.linearRampToValueAtTime(210,now+1.2);
+ oscGain.gain.value=.025;
+
+ const buffer=audioCtx.createBuffer(1,audioCtx.sampleRate,audioCtx.sampleRate);
+ const data=buffer.getChannelData(0);
+ for(let i=0;i<data.length;i++)data[i]=Math.random()*2-1;
+
+ const source=audioCtx.createBufferSource();
+ const noiseFilter=audioCtx.createBiquadFilter();
+ const noiseGain=audioCtx.createGain();
+ source.buffer=buffer;
+ source.loop=true;
+ noiseFilter.type='bandpass';
+ noiseFilter.frequency.value=650;
+ noiseFilter.Q.value=.6;
+ noiseGain.gain.value=.018;
+
+ osc.connect(oscGain);
+ oscGain.connect(filter);
+ filter.connect(audioCtx.destination);
+ source.connect(noiseFilter);
+ noiseFilter.connect(noiseGain);
+ noiseGain.connect(audioCtx.destination);
+
+ osc.start();
+ source.start();
+
+ refillSoundNodes={osc,oscGain,filter,source,noiseGain};
+}
+
+function stopRefillSound(){
+ if(!refillSoundNodes)return;
+ const n=refillSoundNodes;
+ const now=audioCtx.currentTime;
+ n.oscGain.gain.setTargetAtTime(0,now,.04);
+ n.noiseGain.gain.setTargetAtTime(0,now,.04);
+ try{
+  n.osc.stop(now+.2);
+  n.source.stop(now+.2);
+ }catch(_){}
+ refillSoundNodes=null;
+}
+
 function shootSound(){
  tone(800,180,.14,'square',.06);
  tone(130,55,.17,'sawtooth',.035);
@@ -246,7 +247,6 @@ function saveSound(){
  setTimeout(()=>tone(650,1100,.2,'sine',.06),130);
 }
 function alarmSound(){tone(850,500,.2,'square',.04)}
-function refillSound(){tone(350,800,.3,'sine',.05)}
 
 // ---------- پیام ----------
 
@@ -256,7 +256,7 @@ function showMessage(text){
  messageTimer=1.5;
 }
 
-// ---------- کنترل ----------
+// ---------- کنترل جوی‌استیک ----------
 
 const joystickArea=$('joystick-area');
 const knob=$('joystick-knob');
@@ -271,31 +271,27 @@ function joystickStart(e){
 function joystickMove(e){
  if(!joystickActive)return;
  e.preventDefault();
-
  const r=joystickArea.getBoundingClientRect();
  let dx=e.clientX-r.left-r.width/2;
  let dy=e.clientY-r.top-r.height/2;
  const max=r.width*.34;
  const dist=Math.hypot(dx,dy);
  if(dist>max){dx=dx/dist*max;dy=dy/dist*max}
-
  joystickVector={x:dx/max,y:dy/max};
- knob.style.transform=
- `translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+ knob.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
 }
 function joystickEnd(){
  joystickActive=false;
  joystickVector={x:0,y:0};
  knob.style.transform='translate(-50%,-50%)';
 }
-
 joystickArea.addEventListener('pointerdown',joystickStart);
 joystickArea.addEventListener('pointermove',joystickMove);
 joystickArea.addEventListener('pointerup',joystickEnd);
 joystickArea.addEventListener('pointercancel',joystickEnd);
 joystickArea.addEventListener('lostpointercapture',joystickEnd);
 
-// ---------- یک دکمه شلیک ----------
+// ---------- شلیک ----------
 
 const fireBtn=$('fire-btn');
 
@@ -308,6 +304,7 @@ fireBtn.addEventListener('pointerdown',e=>{
  fireBtn.classList.add('active');
  try{fireBtn.setPointerCapture(e.pointerId)}catch(_){}
 });
+
 function releaseFire(){
  fireHeld=false;
  fireBtn.classList.remove('active');
@@ -328,7 +325,7 @@ function fireTorpedo(){
  shootSound();
 }
 
-// ---------- ترسیم ابزارها ----------
+// ---------- ابزارهای ترسیم ----------
 
 function rect(x,y,w,h,color){
  ctx.fillStyle=color;
@@ -348,8 +345,8 @@ function createExplosion(x,y,c1='#ffdc40',c2='#ff4a20',count=35){
   const speed=45+Math.random()*220;
   particles.push({
    x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,
-   life:.45+Math.random()*.7,
-   maxLife:1.15,size:2+Math.random()*6,
+   life:.45+Math.random()*.7,maxLife:1.15,
+   size:2+Math.random()*6,
    color:Math.random()>.5?c1:c2
   });
  }
@@ -360,85 +357,103 @@ function createExplosion(x,y,c1='#ffdc40',c2='#ff4a20',count=35){
 function spawnEnemy(){
  const r=Math.random();
  const type=r>.90?'ship':r>.74?'mine':'sub';
-
  const y=type==='ship'
- ?seaLine-28
- :seaLine+55+Math.random()*Math.max(30,floorLine-seaLine-130);
+  ?seaLine-28
+  :seaLine+55+Math.random()*Math.max(30,floorLine-seaLine-130);
 
  enemies.push({
   x:W+35,y,type,
   width:type==='ship'?54:type==='mine'?27:46,
   height:type==='mine'?27:23,
-  speed:75+Math.random()*35+Math.min(score/15,80),
-  fireTimer:2+Math.random()*2
+  speed:(75+Math.random()*35+Math.min(score/15,80))*(boostApplied?1.2:1),
+  fireTimer:1.5+Math.random()*1.5,
+  burst:0
  });
 }
 
 function spawnDiver(){
  divers.push({
-  x:W+25,
+  x:W+35,
   y:seaLine+75+Math.random()*Math.max(20,floorLine-seaLine-130),
-  width:28,height:26,
+  width:36,height:22,
   speed:65+Math.random()*20,
   phase:Math.random()*6.28
  });
 }
 
-// ---------- غواص متحرک ----------
+// ---------- غواص طبیعی‌تر ----------
 
 function drawDiver(d){
  const x=d.x,y=d.y;
- const swing=Math.sin(elapsed*9+d.phase)*5;
- const arm=Math.sin(elapsed*9+d.phase+1)*4;
+ const kick=Math.sin(elapsed*10+d.phase);
+ const arm=Math.sin(elapsed*8+d.phase+1)*2.5;
 
  ctx.save();
 
- // کپسول اکسیژن پشت غواص
- rect(x+7,y+5,8,12,'#ffffff');
- rect(x+9,y+3,4,3,'#d8e9ff');
+ // غواص رو به چپ شنا می‌کند
+ // کپسول اکسیژن
+ ctx.fillStyle='#e8e8e8';
+ ctx.beginPath();
+ ctx.roundRect(x+18,y+5,9,12,3);
+ ctx.fill();
 
- // سر و ماسک
- rect(x+17,y,8,8,'#ffffff');
- rect(x+20,y+2,5,3,'#39c9ef');
- rect(x+15,y+3,3,3,'#ffffff');
+ rect(x+20,y+3,5,3,'#bfcbd6');
 
- // بدن و لباس
- rect(x+12,y+8,12,9,'#ffffff');
- rect(x+10,y+10,3,7,'#dddddd');
+ // بدن و لباس غواصی
+ ctx.fillStyle='#f1f1f1';
+ ctx.beginPath();
+ ctx.ellipse(x+17,y+11,11,5,0,0,Math.PI*2);
+ ctx.fill();
 
- // دست چپ و راست متحرک
- ctx.strokeStyle='#ffffff';
+ // سر
+ ctx.fillStyle='#e9b98e';
+ ctx.beginPath();
+ ctx.arc(x+5,y+8,5,0,Math.PI*2);
+ ctx.fill();
+
+ // ماسک و شیشه
+ rect(x+1,y+5,6,4,'#38d9f4');
+ rect(x,y+6,2,2,'#ffffff');
+
+ // بازوها
+ ctx.strokeStyle='#f4f4f4';
+ ctx.lineWidth=3.2;
+ ctx.lineCap='round';
+
+ ctx.beginPath();
+ ctx.moveTo(x+13,y+8);
+ ctx.lineTo(x+8,y+5+arm);
+ ctx.lineTo(x+3,y+4+arm);
+ ctx.stroke();
+
+ ctx.beginPath();
+ ctx.moveTo(x+15,y+13);
+ ctx.lineTo(x+9,y+16-arm);
+ ctx.lineTo(x+4,y+15-arm);
+ ctx.stroke();
+
+ // پاها و حرکت شنای متناوب
+ ctx.beginPath();
+ ctx.moveTo(x+23,y+10);
+ ctx.lineTo(x+29+kick*3,y+6);
+ ctx.lineTo(x+35+kick*4,y+4);
+ ctx.stroke();
+
+ ctx.beginPath();
+ ctx.moveTo(x+23,y+13);
+ ctx.lineTo(x+29-kick*3,y+18);
+ ctx.lineTo(x+35-kick*4,y+20);
+ ctx.stroke();
+
+ // کفش و باله‌ها
+ ctx.strokeStyle='#dcefff';
  ctx.lineWidth=3;
- ctx.lineCap='square';
-
  ctx.beginPath();
- ctx.moveTo(x+14,y+10);
- ctx.lineTo(x+8,y+13+arm);
- ctx.lineTo(x+4,y+12+arm);
+ ctx.moveTo(x+33+kick*4,y+4);
+ ctx.lineTo(x+37+kick*4,y+2);
+ ctx.moveTo(x+33-kick*4,y+20);
+ ctx.lineTo(x+37-kick*4,y+22);
  ctx.stroke();
-
- ctx.beginPath();
- ctx.moveTo(x+22,y+10);
- ctx.lineTo(x+28,y+13-arm);
- ctx.lineTo(x+31,y+12-arm);
- ctx.stroke();
-
- // پاهای متحرک
- ctx.beginPath();
- ctx.moveTo(x+14,y+17);
- ctx.lineTo(x+11+swing,y+22);
- ctx.lineTo(x+6+swing,y+24);
- ctx.stroke();
-
- ctx.beginPath();
- ctx.moveTo(x+21,y+17);
- ctx.lineTo(x+24-swing,y+22);
- ctx.lineTo(x+29-swing,y+24);
- ctx.stroke();
-
- // کفش غواصی
- rect(x+3+swing,y+23,6,3,'#ffffff');
- rect(x+27-swing,y+23,6,3,'#ffffff');
 
  ctx.restore();
 }
@@ -446,48 +461,66 @@ function drawDiver(d){
 // ---------- زیردریایی ----------
 
 function drawSubmarine(x,y,direction,color,animated,phase=0){
+ const w=54;
  ctx.save();
 
- // برای جهت چپ، کل طرح قرینه می‌شود
- if(direction===-1){
-  ctx.translate(x*2+player.width,y);
-  ctx.scale(-1,1);
-  x=0;y=0;
- }else{
-  ctx.translate(x,y);
-  x=0;y=0;
- }
+ // جهت چپ با قرینه‌سازی درست
+ ctx.translate(x+(direction===-1?w:0),y);
+ if(direction===-1)ctx.scale(-1,1);
 
- const bob=animated?Math.sin(elapsed*2.5+phase)*1.5:0;
- const prop=animated?Math.sin(elapsed*19+phase)*5:0;
-
+ const bob=animated?Math.sin(elapsed*2.5+phase)*1.2:0;
+ const prop=animated?Math.sin(elapsed*22+phase):0;
  ctx.translate(0,bob);
 
- // بدنه اصلی
- rect(7,5,36,14,color);
- rect(2,9,47,7,color);
- rect(11,1,14,6,color);
- rect(15,-3,7,4,color);
+ // بدنه
+ ctx.fillStyle=color;
+ ctx.beginPath();
+ ctx.moveTo(5,13);
+ ctx.quadraticCurveTo(7,3,20,3);
+ ctx.lineTo(42,5);
+ ctx.quadraticCurveTo(53,8,53,13);
+ ctx.quadraticCurveTo(51,22,39,22);
+ ctx.lineTo(15,21);
+ ctx.quadraticCurveTo(5,20,5,13);
+ ctx.fill();
 
- // پنجره
- rect(30,7,7,5,'#72d8ee');
- rect(31,8,3,2,'#ffffff');
+ // برجک بالای بدنه
+ rect(16,0,17,6,color);
+ rect(20,-4,7,5,color);
 
- // دم زیردریایی
- rect(0,7,6,10,color);
- rect(-3,5,4,5,color);
- rect(-3,14,4,5,color);
+ // باله زیرین
+ rect(20,20,15,4,color);
 
- // محور پروانه
- rect(-7,11,5,2,'#b9b9b9');
+ // پنجره‌ها
+ ctx.fillStyle='#55d8f2';
+ ctx.beginPath();
+ ctx.arc(37,11,3.2,0,Math.PI*2);
+ ctx.fill();
+ ctx.fillStyle='#ffffff';
+ ctx.beginPath();
+ ctx.arc(36,10,1.2,0,Math.PI*2);
+ ctx.fill();
 
- // پروانه چرخان
+ // خط و جزئیات بدنه
+ rect(12,15,24,2,'rgba(80,70,20,.45)');
+ rect(9,8,3,8,'rgba(255,255,255,.25)');
+
+ // دم و پروانه چرخان
+ rect(1,8,5,10,color);
+ rect(0,5,4,5,color);
+ rect(0,16,4,5,color);
+ rect(-5,12,5,2,'#c9d5df');
+
  ctx.save();
- ctx.translate(-8,12);
- ctx.rotate(prop*.18);
- rect(-2,-9,4,8,'#e8d34b');
- rect(-2,2,4,8,'#e8d34b');
- rect(-5,-2,10,4,'#ffffff');
+ ctx.translate(-7,13);
+ ctx.rotate(prop*.8);
+ ctx.fillStyle='#f3d64c';
+ ctx.beginPath();
+ ctx.ellipse(0,-5,2.2,5,0,0,Math.PI*2);
+ ctx.ellipse(0,5,2.2,5,0,0,Math.PI*2);
+ ctx.fill();
+ ctx.fillStyle='#ffffff';
+ ctx.fillRect(-1.5,-2,3,4);
  ctx.restore();
 
  ctx.restore();
@@ -496,41 +529,26 @@ function drawSubmarine(x,y,direction,color,animated,phase=0){
 function drawPlayer(){
  if(respawnTimer>0)return;
  if(invulnerable>0&&Math.floor(elapsed*12)%2===0)return;
-
- const angle=Math.max(-.10,Math.min(.10,player.vy/850));
-
+ const angle=Math.max(-.10,Math.min(.10,player.vy/1100));
  ctx.save();
  ctx.translate(player.x+player.width/2,player.y+player.height/2);
  ctx.rotate(angle);
-
- drawSubmarine(
-  -player.width/2,
-  -player.height/2,
-  player.direction,
-  '#ead33d',
-  true
- );
-
+ drawSubmarine(-player.width/2,-player.height/2,player.direction,'#ead33d',true);
  ctx.restore();
 }
 
 function drawEnemy(e){
- // همه دشمنان سفید هستند
  if(e.type==='sub'){
   drawSubmarine(e.x,e.y,1,'#ffffff',true,e.y);
  }
-
  if(e.type==='ship'){
-  ctx.save();
   rect(e.x,e.y+10,e.width,9,'#ffffff');
   rect(e.x+7,e.y+5,e.width-14,7,'#ffffff');
   rect(e.x+20,e.y-4,13,10,'#ffffff');
   rect(e.x+23,e.y-11,5,8,'#ffffff');
   rect(e.x+11,e.y+7,4,3,'#9ce8ff');
   rect(e.x+37,e.y+7,4,3,'#9ce8ff');
-  ctx.restore();
  }
-
  if(e.type==='mine'){
   const cx=e.x+e.width/2,cy=e.y+e.height/2;
   rect(cx-10,cy-10,20,20,'#ffffff');
@@ -544,19 +562,30 @@ function drawEnemy(e){
 
 function drawBackground(){
  const g=ctx.createLinearGradient(0,seaLine,0,H);
- g.addColorStop(0,'#001b87');
+ g.addColorStop(0,'#00218c');
  g.addColorStop(1,'#00104c');
 
  rect(0,0,W,H,'#3039b7');
- rect(0,seaLine-17,W,5,'#e44b42');
- rect(0,seaLine-12,W,5,'#e9a13b');
- rect(0,seaLine-7,W,7,'#173d9b');
+ rect(0,0,W,seaLine,'#3039b7');
  rect(0,seaLine,W,H-seaLine,g);
 
- // خطوط ثابت آب
+ // خط سطح آب: واضح و روشن
+ ctx.fillStyle='rgba(110,225,255,.28)';
+ ctx.fillRect(0,seaLine-8,W,14);
+ ctx.fillStyle='#e7fbff';
+ ctx.fillRect(0,seaLine-2,W,3);
+ ctx.fillStyle='#5bdcff';
+ ctx.fillRect(0,seaLine+2,W,2);
+
+ // بازتاب‌های کوتاه ثابت
+ ctx.fillStyle='rgba(255,255,255,.45)';
+ for(let x=15;x<W;x+=125){
+  ctx.fillRect(x,seaLine-5,32,1);
+ }
+
+ // خطوط عمق آب
  ctx.strokeStyle='rgba(130,170,255,.12)';
  ctx.lineWidth=2;
-
  for(let y=seaLine+35;y<floorLine;y+=55){
   ctx.beginPath();
   ctx.moveTo(0,y);
@@ -564,29 +593,36 @@ function drawBackground(){
   ctx.stroke();
  }
 
- // کف دریا ثابت و بدون اشیای متحرک
+ // کف ثابت دریا
  rect(0,floorLine,W,H-floorLine,'#929292');
  rect(0,floorLine-9,W,9,'#08752a');
-
- for(let x=0;x<W;x+=100){
-  rect(x,floorLine-5,35,5,'#138a35');
- }
+ for(let x=0;x<W;x+=100)rect(x,floorLine-5,35,5,'#138a35');
 }
 
-// ---------- اژدر ----------
+// ---------- اژدرها ----------
 
 function drawTorpedo(t){
+ ctx.save();
+ ctx.shadowColor='#b9f3ff';
+ ctx.shadowBlur=8;
  rect(t.x,t.y,t.width,t.height,'#ffffff');
  rect(t.x+(t.direction===1?0:t.width-4),t.y+1,4,4,'#6bdcff');
+ ctx.restore();
 
- ctx.fillStyle='rgba(100,210,255,.5)';
+ ctx.fillStyle='rgba(100,210,255,.48)';
  ctx.fillRect(
-  t.direction===1?t.x-10:t.x+t.width,
-  t.y+2,10,2
+  t.direction===1?t.x-13:t.x+t.width,
+  t.y+2,13,2
  );
 }
 
-// ---------- ذرات انفجار ----------
+function drawEnemyTorpedo(t){
+ ctx.save();
+ ctx.shadowColor='#ffffff';
+ ctx.shadowBlur=8;
+ rect(t.x,t.y,t.width,t.height,'#ffffff');
+ ctx.restore();
+}
 
 function drawParticles(){
  for(const p of particles){
@@ -596,71 +632,90 @@ function drawParticles(){
  ctx.globalAlpha=1;
 }
 
-// ---------- ترسیم نهایی ----------
-
 function draw(){
  ctx.save();
-
  if(screenShake>0){
-  ctx.translate((Math.random()-.5)*screenShake,
-                (Math.random()-.5)*screenShake);
+  ctx.translate((Math.random()-.5)*screenShake,(Math.random()-.5)*screenShake);
  }
-
  drawBackground();
-
  divers.forEach(drawDiver);
  enemies.forEach(drawEnemy);
-
  drawPlayer();
-
  torpedoes.forEach(drawTorpedo);
-
- enemyTorpedoes.forEach(t=>{
-  rect(t.x,t.y,t.width,t.height,'#ffffff');
- });
-
+ enemyTorpedoes.forEach(drawEnemyTorpedo);
  drawParticles();
-
  ctx.restore();
 }
 
 // ---------- اکسیژن ----------
 
-function updateOxygen(){
+function isAtSurface(){
+ // بالای بدنه به خط سطح آب رسیده باشد
+ return player.y<=seaLine-player.height+4;
+}
+
+function updateOxygen(dt){
+ const atSurface=isAtSurface()&&respawnTimer<=0;
+
+ if(atSurface&&oxygen<100){
+  const old=oxygen;
+  oxygen=Math.min(100,oxygen+CFG.oxygenRefill*dt);
+  startRefillSound();
+
+  if(old<99&&oxygen>=99){
+   showMessage('اکسیژن کامل شد!');
+   stopRefillSound();
+  }
+ }else{
+  stopRefillSound();
+  if(!atSurface){
+   oxygen=Math.max(0,oxygen-CFG.oxygenDrain*dt);
+   if(oxygen<25&&Math.random()<dt*.9)alarmSound();
+   if(oxygen<=0)damagePlayer();
+  }
+ }
+
  $('oxygen-bar').style.width=oxygen+'%';
  $('oxygen-bar').style.background=
  oxygen<25?'#ed3525':oxygen<50?'#f5a623':'#e8e8e8';
 }
 
-// ---------- جان و انفجار ----------
+// ---------- آسیب ----------
 
 function damagePlayer(){
  if(invulnerable>0||respawnTimer>0||!active)return;
 
  lives--;
  $('lives').textContent=lives;
-
- createExplosion(
-  player.x+player.width/2,
-  player.y+player.height/2,
-  '#fff04a','#ff3a19',65
- );
-
+ createExplosion(player.x+player.width/2,player.y+player.height/2,'#fff04a','#ff3a19',65);
  playerExplosionSound();
  screenShake=17;
  player.vx=0;player.vy=0;
  oxygen=100;
- updateOxygen();
+ stopRefillSound();
 
  invulnerable=1.8;
  respawnTimer=1.1;
-
  showMessage('زیردریایی آسیب دید!');
 
  if(lives<=0)endGame();
 }
 
-// ---------- آپدیت بازی ----------
+// ---------- سختی مرحله ----------
+
+function checkDifficulty(){
+ if(score>=1000&&!boostApplied){
+  boostApplied=true;
+  CFG.maxSpeed*=1.2;
+  CFG.acceleration*=1.2;
+  CFG.torpedoSpeed*=1.2;
+  CFG.fireInterval*=.9;
+  showMessage('خطر بیشتر شد! سرعت دشمنان افزایش یافت');
+  tone(500,1100,.5,'sawtooth',.08);
+ }
+}
+
+// ---------- به‌روزرسانی ----------
 
 function update(dt){
  elapsed+=dt;
@@ -680,16 +735,23 @@ function update(dt){
    player.vx=0;player.vy=0;
   }
  }else{
+  // ترکیب ورودی جوی‌استیک و صفحه‌کلید
+  let ix=joystickActive?joystickVector.x:0;
+  let iy=joystickActive?joystickVector.y:0;
 
-  if(joystickActive){
-   player.vx+=joystickVector.x*CFG.acceleration*dt;
-   player.vy+=joystickVector.y*CFG.acceleration*dt;
+  ix=Math.max(-1,Math.min(1,ix+keyboardVector.x));
+  iy=Math.max(-1,Math.min(1,iy+keyboardVector.y));
 
-   // جهت شلیک با جهت افقی حرکت تعیین می‌شود
-   if(Math.abs(joystickVector.x)>.18){
-    player.direction=joystickVector.x>0?1:-1;
-   }
+  const inputLength=Math.hypot(ix,iy);
+  if(inputLength>1){ix/=inputLength;iy/=inputLength}
+
+  if(Math.abs(ix)>.08||Math.abs(iy)>.08){
+   player.vx+=ix*CFG.acceleration*dt;
+   player.vy+=iy*CFG.acceleration*dt;
   }
+
+  // جهت شلیک از آخرین جهت افقی حرکت
+  if(Math.abs(ix)>.12)player.direction=ix>0?1:-1;
 
   const friction=Math.pow(CFG.friction,dt*60);
   player.vx*=friction;
@@ -707,9 +769,10 @@ function update(dt){
   player.x+=player.vx*dt;
   player.y+=player.vy*dt;
 
-  // فاصله ایمن از سطح آب
-  if(player.y<seaLine+32){
-   player.y=seaLine+32;
+  // امکان تماس بدنه زیردریایی با سطح آب
+  const topLimit=seaLine-player.height+3;
+  if(player.y<topLimit){
+   player.y=topLimit;
    player.vy=Math.max(0,player.vy);
   }
 
@@ -724,21 +787,9 @@ function update(dt){
    player.vx=Math.min(0,player.vx);
   }
 
-  // اکسیژن
-  if(player.y<seaLine+115){
-   const old=oxygen;
-   oxygen=Math.min(100,oxygen+CFG.oxygenRefill*dt);
-   if(old<99&&oxygen>=99){
-    refillSound();
-    showMessage('اکسیژن کامل شد!');
-   }
-  }else{
-   oxygen=Math.max(0,oxygen-CFG.oxygenDrain*dt);
-   if(oxygen<25&&Math.random()<dt*.9)alarmSound();
-   if(oxygen<=0)damagePlayer();
-  }
+  updateOxygen(dt);
 
-  // شلیک پیوسته با یک دکمه
+  // شلیک پیوسته
   if(fireHeld){
    fireTimer-=dt;
    if(fireTimer<=0){
@@ -748,15 +799,18 @@ function update(dt){
   }
  }
 
- // تولید دشمنان و غواصان
+ // تولید دشمنان
  enemyTimer+=dt;
  diverTimer+=dt;
 
- if(enemyTimer>Math.max(.7,1.7-score/16000)){
-  spawnEnemy();enemyTimer=0;
+ const enemyInterval=Math.max(.55,1.7-score/16000)*(boostApplied?.8:1);
+ if(enemyTimer>enemyInterval){
+  spawnEnemy();
+  enemyTimer=0;
  }
  if(diverTimer>5.2){
-  spawnDiver();diverTimer=0;
+  spawnDiver();
+  diverTimer=0;
  }
 
  // ذرات
@@ -770,7 +824,7 @@ function update(dt){
   if(p.life<=0)particles.splice(i,1);
  }
 
- // اژدرها
+ // اژدرهای بازیکن
  for(let i=torpedoes.length-1;i>=0;i--){
   const t=torpedoes[i];
   t.x+=t.vx*dt;
@@ -778,7 +832,7 @@ function update(dt){
   if(t.x>W+30||t.x<-30||t.life<=0)torpedoes.splice(i,1);
  }
 
- // اژدر دشمن
+ // اژدرهای دشمن
  for(let i=enemyTorpedoes.length-1;i>=0;i--){
   const t=enemyTorpedoes[i];
   t.x+=t.vx*dt;
@@ -789,11 +843,10 @@ function update(dt){
   }
  }
 
- // غواصان متحرک
+ // غواصان
  for(let i=divers.length-1;i>=0;i--){
   const d=divers[i];
   d.x-=d.speed*dt;
-
   if(d.x+d.width<0){divers.splice(i,1);continue}
 
   if(respawnTimer<=0&&overlap(d,player)){
@@ -803,6 +856,7 @@ function update(dt){
    saveSound();
    showMessage('غواص نجات پیدا کرد!');
    $('score').textContent=score;
+   checkDifficulty();
 
    if(savedDivers>=6){
     savedDivers=0;
@@ -810,12 +864,11 @@ function update(dt){
     $('lives').textContent=lives;
     showMessage('یک جان اضافه گرفتی!');
    }
-
    updateDiverIcons();
   }
  }
 
- // دشمنان سفید
+ // دشمنان
  for(let i=enemies.length-1;i>=0;i--){
   const e=enemies[i];
   e.x-=e.speed*dt;
@@ -823,11 +876,19 @@ function update(dt){
   if(e.type==='sub'&&score>500){
    e.fireTimer-=dt;
    if(e.fireTimer<=0){
-    enemyTorpedoes.push({
-     x:e.x,y:e.y+e.height/2,
-     vx:-220,width:13,height:5
-    });
-    e.fireTimer=2.5+Math.random()*2;
+    const enemySpeed=(boostApplied?264:220);
+    const shots=boostApplied?2:1;
+
+    for(let k=0;k<shots;k++){
+     enemyTorpedoes.push({
+      x:e.x,
+      y:e.y+e.height/2+(k===0?-5:5),
+      vx:-enemySpeed,
+      width:15,height:5
+     });
+    }
+
+    e.fireTimer=(2.2+Math.random()*1.5)*(boostApplied?.8:1);
    }
   }
 
@@ -844,12 +905,12 @@ function update(dt){
 
   for(let j=torpedoes.length-1;j>=0;j--){
    if(overlap(torpedoes[j],e)){
-    createExplosion(e.x+e.width/2,e.y+e.height/2,
-                    '#ffffff','#d6d6d6',30);
+    createExplosion(e.x+e.width/2,e.y+e.height/2,'#ffffff','#d6d6d6',30);
     explosionSound();
 
     score+=e.type==='ship'?25:e.type==='mine'?15:30;
     $('score').textContent=score;
+    checkDifficulty();
 
     enemies.splice(i,1);
     torpedoes.splice(j,1);
@@ -859,11 +920,9 @@ function update(dt){
  }
 
  if(screenShake>0)screenShake=Math.max(0,screenShake-dt*35);
-
- updateOxygen();
 }
 
-// ---------- شروع و پایان ----------
+// ---------- رابط کاربری ----------
 
 function updateDiverIcons(){
  const box=$('divers');
@@ -877,10 +936,17 @@ function updateDiverIcons(){
 
 function resetGame(){
  resize();
+ stopRefillSound();
 
  score=0;lives=3;oxygen=100;savedDivers=0;
  elapsed=0;enemyTimer=0;diverTimer=0;
  fireTimer=0;fireHeld=false;
+ boostApplied=false;
+
+ CFG.acceleration=1150;
+ CFG.maxSpeed=310;
+ CFG.torpedoSpeed=680;
+ CFG.fireInterval=.22;
 
  enemies=[];torpedoes=[];enemyTorpedoes=[];
  divers=[];particles=[];
@@ -891,6 +957,7 @@ function resetGame(){
  player.direction=1;
 
  invulnerable=0;respawnTimer=0;screenShake=0;
+ keyboardVector={x:0,y:0};
 
  joystickEnd();
  releaseFire();
@@ -901,7 +968,8 @@ function resetGame(){
  $('start-screen').style.display='none';
 
  updateDiverIcons();
- updateOxygen();
+ $('oxygen-bar').style.width='100%';
+ $('oxygen-bar').style.background='#e8e8e8';
 
  active=true;
  gameEnded=false;
@@ -915,22 +983,19 @@ function endGame(){
  if(gameEnded)return;
  gameEnded=true;
  active=false;
+ stopRefillSound();
  joystickEnd();
  releaseFire();
-
  $('final-score').textContent=score;
  $('game-over').style.display='flex';
 }
 
 function gameLoop(timestamp){
  if(!active)return;
-
  let dt=Math.min((timestamp-lastTime)/1000,.033);
  lastTime=timestamp;
-
  update(dt);
  draw();
-
  if(active)window.gameAnimation=requestAnimationFrame(gameLoop);
 }
 
@@ -948,6 +1013,7 @@ $('restart-btn').addEventListener('click',()=>{
 });
 
 $('exit-btn').addEventListener('click',()=>{
+ stopRefillSound();
  if(window.Capacitor?.Plugins?.App){
   window.Capacitor.Plugins.App.exitApp();
  }else{
@@ -956,32 +1022,50 @@ $('exit-btn').addEventListener('click',()=>{
  }
 });
 
-// کنترل کامپیوتر
-window.addEventListener('keydown',e=>{
- if(e.key==='ArrowRight'||e.key==='d'){
-  joystickVector.x=1;player.direction=1;
- }
- if(e.key==='ArrowLeft'||e.key==='a'){
-  joystickVector.x=-1;player.direction=-1;
- }
- if(e.key==='ArrowUp'||e.key==='w')joystickVector.y=-1;
- if(e.key==='ArrowDown'||e.key==='s')joystickVector.y=1;
+// ---------- صفحه‌کلید ----------
 
- if(e.key===' '){
-  e.preventDefault();
-  if(active){
-   fireHeld=true;
-   fireTimer=0;
-  }
+const keysDown=new Set();
+
+window.addEventListener('keydown',e=>{
+ if(['ArrowRight','ArrowLeft','ArrowUp','ArrowDown',' '].includes(e.key))e.preventDefault();
+ keysDown.add(e.key.toLowerCase());
+
+ keyboardVector.x=
+ (keysDown.has('arrowright')||keysDown.has('d')?1:0)-
+ (keysDown.has('arrowleft')||keysDown.has('a')?1:0);
+
+ keyboardVector.y=
+ (keysDown.has('arrowdown')||keysDown.has('s')?1:0)-
+ (keysDown.has('arrowup')||keysDown.has('w')?1:0);
+
+ if(keyboardVector.x!==0)player.direction=keyboardVector.x>0?1:-1;
+
+ if(e.key===' '&&active){
+  initAudio();
+  fireHeld=true;
+  fireTimer=0;
  }
 });
 
 window.addEventListener('keyup',e=>{
- if(['ArrowRight','ArrowLeft','d','a'].includes(e.key))
-  joystickVector.x=0;
- if(['ArrowUp','ArrowDown','w','s'].includes(e.key))
-  joystickVector.y=0;
+ keysDown.delete(e.key.toLowerCase());
+
+ keyboardVector.x=
+ (keysDown.has('arrowright')||keysDown.has('d')?1:0)-
+ (keysDown.has('arrowleft')||keysDown.has('a')?1:0);
+
+ keyboardVector.y=
+ (keysDown.has('arrowdown')||keysDown.has('s')?1:0)-
+ (keysDown.has('arrowup')||keysDown.has('w')?1:0);
+
  if(e.key===' ')fireHeld=false;
+});
+
+window.addEventListener('blur',()=>{
+ keysDown.clear();
+ keyboardVector={x:0,y:0};
+ releaseFire();
+ joystickEnd();
 });
 
 document.addEventListener('contextmenu',e=>e.preventDefault());
