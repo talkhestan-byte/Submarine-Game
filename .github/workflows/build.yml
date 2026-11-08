@@ -26,19 +26,64 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Install Python image tools
+        run: |
+          python3 -m pip install --user Pillow
+
+      - name: Check icon files
+        run: |
+          python3 - <<'PY'
+          from PIL import Image
+          import os
+
+          files = [
+              "assets/icon-only.png",
+              "assets/icon-foreground.png",
+              "assets/icon-background.png"
+          ]
+
+          for file in files:
+              if not os.path.isfile(file):
+                  raise SystemExit(f"Missing icon file: {file}")
+
+              img = Image.open(file).convert("RGBA")
+              print(f"{file}: {img.size}")
+
+              if img.width < 1024 or img.height < 1024:
+                  raise SystemExit(
+                      f"Icon must be at least 1024x1024: {file}"
+                  )
+
+          print("All icon files are valid.")
+          PY
+
       - name: Prepare web app
         run: |
           mkdir -p www
           cp index.html www/
+
           npm init -y
+
           npm install @capacitor/core@6 @capacitor/android@6
           npm install --save-dev @capacitor/cli@6
+          npm install --save-dev @capacitor/assets
 
       - name: Configure Capacitor
         run: |
           npx cap init "Submarine Game" com.iranianconcrete.submarine --web-dir www
           npx cap add android
           npx cap sync android
+
+      - name: Generate Android icons
+        run: |
+          npx capacitor-assets generate --android
+
+      - name: Verify generated Android icons
+        run: |
+          echo "Checking generated launcher icons..."
+          find android/app/src/main/res -type f \
+            \( -name "ic_launcher.png" -o -name "ic_launcher_foreground.png" \) \
+            -print
 
       - name: Build APK
         run: |
