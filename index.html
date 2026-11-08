@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
@@ -390,8 +389,6 @@ function drawDiver(d){
 
  ctx.save();
 
- // غواص رو به چپ شنا می‌کند
- // کپسول اکسیژن
  ctx.fillStyle='#e8e8e8';
  ctx.beginPath();
  ctx.roundRect(x+18,y+5,9,12,3);
@@ -399,23 +396,19 @@ function drawDiver(d){
 
  rect(x+20,y+3,5,3,'#bfcbd6');
 
- // بدن و لباس غواصی
  ctx.fillStyle='#f1f1f1';
  ctx.beginPath();
  ctx.ellipse(x+17,y+11,11,5,0,0,Math.PI*2);
  ctx.fill();
 
- // سر
  ctx.fillStyle='#e9b98e';
  ctx.beginPath();
  ctx.arc(x+5,y+8,5,0,Math.PI*2);
  ctx.fill();
 
- // ماسک و شیشه
  rect(x+1,y+5,6,4,'#38d9f4');
  rect(x,y+6,2,2,'#ffffff');
 
- // بازوها
  ctx.strokeStyle='#f4f4f4';
  ctx.lineWidth=3.2;
  ctx.lineCap='round';
@@ -432,7 +425,6 @@ function drawDiver(d){
  ctx.lineTo(x+4,y+15-arm);
  ctx.stroke();
 
- // پاها و حرکت شنای متناوب
  ctx.beginPath();
  ctx.moveTo(x+23,y+10);
  ctx.lineTo(x+29+kick*3,y+6);
@@ -445,7 +437,6 @@ function drawDiver(d){
  ctx.lineTo(x+35-kick*4,y+20);
  ctx.stroke();
 
- // کفش و باله‌ها
  ctx.strokeStyle='#dcefff';
  ctx.lineWidth=3;
  ctx.beginPath();
@@ -464,7 +455,6 @@ function drawSubmarine(x,y,direction,color,animated,phase=0){
  const w=54;
  ctx.save();
 
- // جهت چپ با قرینه‌سازی درست
  ctx.translate(x+(direction===-1?w:0),y);
  if(direction===-1)ctx.scale(-1,1);
 
@@ -472,7 +462,6 @@ function drawSubmarine(x,y,direction,color,animated,phase=0){
  const prop=animated?Math.sin(elapsed*22+phase):0;
  ctx.translate(0,bob);
 
- // بدنه
  ctx.fillStyle=color;
  ctx.beginPath();
  ctx.moveTo(5,13);
@@ -484,14 +473,10 @@ function drawSubmarine(x,y,direction,color,animated,phase=0){
  ctx.quadraticCurveTo(5,20,5,13);
  ctx.fill();
 
- // برجک بالای بدنه
  rect(16,0,17,6,color);
  rect(20,-4,7,5,color);
-
- // باله زیرین
  rect(20,20,15,4,color);
 
- // پنجره‌ها
  ctx.fillStyle='#55d8f2';
  ctx.beginPath();
  ctx.arc(37,11,3.2,0,Math.PI*2);
@@ -501,11 +486,9 @@ function drawSubmarine(x,y,direction,color,animated,phase=0){
  ctx.arc(36,10,1.2,0,Math.PI*2);
  ctx.fill();
 
- // خط و جزئیات بدنه
  rect(12,15,24,2,'rgba(80,70,20,.45)');
  rect(9,8,3,8,'rgba(255,255,255,.25)');
 
- // دم و پروانه چرخان
  rect(1,8,5,10,color);
  rect(0,5,4,5,color);
  rect(0,16,4,5,color);
@@ -539,7 +522,8 @@ function drawPlayer(){
 
 function drawEnemy(e){
  if(e.type==='sub'){
-  drawSubmarine(e.x,e.y,1,'#ffffff',true,e.y);
+  // زیردریایی دشمن رو به چپ است؛ همان جهت حرکت و شلیک
+  drawSubmarine(e.x,e.y,-1,'#ffffff',true,e.y);
  }
  if(e.type==='ship'){
   rect(e.x,e.y+10,e.width,9,'#ffffff');
@@ -569,7 +553,6 @@ function drawBackground(){
  rect(0,0,W,seaLine,'#3039b7');
  rect(0,seaLine,W,H-seaLine,g);
 
- // خط سطح آب: واضح و روشن
  ctx.fillStyle='rgba(110,225,255,.28)';
  ctx.fillRect(0,seaLine-8,W,14);
  ctx.fillStyle='#e7fbff';
@@ -577,13 +560,11 @@ function drawBackground(){
  ctx.fillStyle='#5bdcff';
  ctx.fillRect(0,seaLine+2,W,2);
 
- // بازتاب‌های کوتاه ثابت
  ctx.fillStyle='rgba(255,255,255,.45)';
  for(let x=15;x<W;x+=125){
   ctx.fillRect(x,seaLine-5,32,1);
  }
 
- // خطوط عمق آب
  ctx.strokeStyle='rgba(130,170,255,.12)';
  ctx.lineWidth=2;
  for(let y=seaLine+35;y<floorLine;y+=55){
@@ -593,7 +574,6 @@ function drawBackground(){
   ctx.stroke();
  }
 
- // کف ثابت دریا
  rect(0,floorLine,W,H-floorLine,'#929292');
  rect(0,floorLine-9,W,9,'#08752a');
  for(let x=0;x<W;x+=100)rect(x,floorLine-5,35,5,'#138a35');
@@ -618,9 +598,20 @@ function drawTorpedo(t){
 
 function drawEnemyTorpedo(t){
  ctx.save();
- ctx.shadowColor='#ffffff';
- ctx.shadowBlur=8;
+ ctx.shadowColor='#ffb5a0';
+ ctx.shadowBlur=5;
+
+ // بدنه کوچک اژدر
  rect(t.x,t.y,t.width,t.height,'#ffffff');
+
+ // نوک اژدر در سمت چپ
+ rect(t.x,t.y,3,t.height,'#ff684d');
+
+ // رد نور باریک پشت اژدر
+ ctx.shadowBlur=0;
+ ctx.fillStyle='rgba(255,180,150,.45)';
+ ctx.fillRect(t.x+t.width,t.y+1,8,1.5);
+
  ctx.restore();
 }
 
@@ -650,7 +641,6 @@ function draw(){
 // ---------- اکسیژن ----------
 
 function isAtSurface(){
- // بالای بدنه به خط سطح آب رسیده باشد
  return player.y<=seaLine-player.height+4;
 }
 
@@ -735,7 +725,6 @@ function update(dt){
    player.vx=0;player.vy=0;
   }
  }else{
-  // ترکیب ورودی جوی‌استیک و صفحه‌کلید
   let ix=joystickActive?joystickVector.x:0;
   let iy=joystickActive?joystickVector.y:0;
 
@@ -750,7 +739,6 @@ function update(dt){
    player.vy+=iy*CFG.acceleration*dt;
   }
 
-  // جهت شلیک از آخرین جهت افقی حرکت
   if(Math.abs(ix)>.12)player.direction=ix>0?1:-1;
 
   const friction=Math.pow(CFG.friction,dt*60);
@@ -769,7 +757,6 @@ function update(dt){
   player.x+=player.vx*dt;
   player.y+=player.vy*dt;
 
-  // امکان تماس بدنه زیردریایی با سطح آب
   const topLimit=seaLine-player.height+3;
   if(player.y<topLimit){
    player.y=topLimit;
@@ -789,7 +776,6 @@ function update(dt){
 
   updateOxygen(dt);
 
-  // شلیک پیوسته
   if(fireHeld){
    fireTimer-=dt;
    if(fireTimer<=0){
@@ -799,7 +785,6 @@ function update(dt){
   }
  }
 
- // تولید دشمنان
  enemyTimer+=dt;
  diverTimer+=dt;
 
@@ -813,7 +798,6 @@ function update(dt){
   diverTimer=0;
  }
 
- // ذرات
  for(let i=particles.length-1;i>=0;i--){
   const p=particles[i];
   p.x+=p.vx*dt;
@@ -836,7 +820,12 @@ function update(dt){
  for(let i=enemyTorpedoes.length-1;i>=0;i--){
   const t=enemyTorpedoes[i];
   t.x+=t.vx*dt;
-  if(t.x<-30){enemyTorpedoes.splice(i,1);continue}
+
+  if(t.x+t.width<-30){
+   enemyTorpedoes.splice(i,1);
+   continue;
+  }
+
   if(respawnTimer<=0&&overlap(t,player)){
    enemyTorpedoes.splice(i,1);
    damagePlayer();
@@ -871,20 +860,25 @@ function update(dt){
  // دشمنان
  for(let i=enemies.length-1;i>=0;i--){
   const e=enemies[i];
+
+  // حرکت دشمن به سمت چپ
   e.x-=e.speed*dt;
 
   if(e.type==='sub'&&score>500){
    e.fireTimer-=dt;
+
    if(e.fireTimer<=0){
-    const enemySpeed=(boostApplied?264:220);
+    const enemySpeed=boostApplied?264:220;
     const shots=boostApplied?2:1;
 
     for(let k=0;k<shots;k++){
      enemyTorpedoes.push({
-      x:e.x,
-      y:e.y+e.height/2+(k===0?-5:5),
+      // اژدر از جلوی زیردریایی دشمن که رو به چپ است خارج می‌شود
+      x:e.x-11,
+      y:e.y+e.height/2+(k===0?-4:4),
       vx:-enemySpeed,
-      width:15,height:5
+      width:11,
+      height:3
      });
     }
 
