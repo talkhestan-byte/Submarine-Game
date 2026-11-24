@@ -100,10 +100,11 @@ let invulnerable=0,respawnTimer=0;
 let screenShake=0,messageTimer=0;
 let audioCtx=null;
 let alarmTimer=0;
+let oxygenEmptyPlayed=false;
 let refillSoundNodes=null;
 let boostApplied=false;
 
-let enemies=[],torpedoes=[],divers=[],particles=[];
+let enemies=[],torpedoes=[],enemyShots=[],divers=[],particles=[];
 
 const CFG={
  acceleration:820,
@@ -251,9 +252,27 @@ function saveSound(){
 }
 function alarmSound(){
  if(!audioCtx)return;
- tone(980,720,.24,'sawtooth',.15);
- setTimeout(()=>tone(720,980,.24,'sawtooth',.15),260);
- noise(.16,.055);
+ tone(660,520,.32,'sine',.075);
+ setTimeout(()=>tone(520,660,.32,'sine',.075),360);
+}
+
+function oxygenEmptySound(){
+ if(!audioCtx)return;
+ const now=audioCtx.currentTime;
+ const osc=audioCtx.createOscillator();
+ const gain=audioCtx.createGain();
+ const filter=audioCtx.createBiquadFilter();
+ osc.type='sine';
+ osc.frequency.setValueAtTime(240,now);
+ osc.frequency.exponentialRampToValueAtTime(72,now+1.15);
+ filter.type='lowpass';filter.frequency.setValueAtTime(520,now);
+ filter.frequency.exponentialRampToValueAtTime(150,now+1.1);
+ gain.gain.setValueAtTime(.001,now);
+ gain.gain.linearRampToValueAtTime(.18,now+.12);
+ gain.gain.exponentialRampToValueAtTime(.001,now+1.25);
+ osc.connect(filter);filter.connect(gain);gain.connect(audioCtx.destination);
+ osc.start(now);osc.stop(now+1.3);
+ noise(.65,.045);
 }
 
 // ---------- پیام ----------
@@ -376,7 +395,8 @@ function spawnEnemy(){
  enemies.push({
   x:direction===-1?W+width+24:-width-24,
   y,type,variant,direction,width,height,
-  speed:(52+Math.random()*24+Math.min(score/45,28))*(boostApplied?1.12:1)
+  speed:(52+Math.random()*24+Math.min(score/45,28))*(boostApplied?1.10:1),
+  fireCooldown:1.2+Math.random()*2.2
  });
 }
 
@@ -493,6 +513,17 @@ function drawPlayer(){
  ctx.restore();
 }
 
+function drawEnemyShot(t){
+ ctx.save();
+ ctx.translate(t.x,t.y);
+ ctx.rotate(Math.atan2(t.vy,t.vx));
+ ctx.shadowColor='#ff8a32';ctx.shadowBlur=10;
+ ctx.fillStyle='#ffb044';
+ ctx.beginPath();ctx.roundRect(-9,-4,18,8,3);ctx.fill();
+ ctx.fillStyle='#fff1b8';ctx.fillRect(-5,-2,8,3);
+ ctx.restore();
+}
+
 function drawEnemy(e){
  if(e.type==='sub')drawEnemySubmarine(e);
  else if(e.type==='ship'){
@@ -574,6 +605,7 @@ function draw(){
  enemies.forEach(drawEnemy);
  drawPlayer();
  torpedoes.forEach(drawTorpedo);
+ enemyShots.forEach(drawEnemyShot);
  drawParticles();
  ctx.restore();
 }
@@ -590,6 +622,7 @@ function updateOxygen(dt){
  if(atSurface&&oxygen<100){
   const old=oxygen;
   oxygen=Math.min(100,oxygen+CFG.oxygenRefill*dt);
+  if(oxygen>5)oxygenEmptyPlayed=false;
   startRefillSound();
 
   if(old<99&&oxygen>=99){
@@ -604,7 +637,10 @@ function updateOxygen(dt){
     alarmTimer-=dt;
     if(alarmTimer<=0){alarmSound();alarmTimer=.85;}
    }else{alarmTimer=0;}
-   if(oxygen<=0)damagePlayer();
+   if(oxygen<=0){
+    if(!oxygenEmptyPlayed){oxygenEmptySound();oxygenEmptyPlayed=true;}
+    damagePlayer();
+   }
   }
  }
 
@@ -637,14 +673,14 @@ function damagePlayer(){
 // ---------- سختی مرحله ----------
 
 function checkDifficulty(){
- if(score>=650&&!boostApplied){
+ if(score>=5000&&!boostApplied){
   boostApplied=true;
   CFG.maxSpeed*=1.08;
   CFG.acceleration*=1.08;
   CFG.torpedoSpeed*=1.08;
-  CFG.fireInterval*=.94;
-  showMessage('FINAL WAVE! INCOMING TORPEDOES');
-  tone(500,1100,.5,'sawtooth',.08);
+  CFG.fireInterval*=.96;
+  showMessage('ENEMY SPEED INCREASED!');
+  tone(420,760,.42,'triangle',.07);
  }
 }
 
@@ -760,6 +796,20 @@ function update(dt){
  }
 
 
+ // گلوله‌های دشمن
+ for(let i=enemyShots.length-1;i>=0;i--){
+  const t=enemyShots[i];
+  t.x+=t.vx*dt;t.y+=t.vy*dt;t.life-=dt;
+  if(t.life<=0||t.x<-25||t.x>W+25||t.y<seaLine-35||t.y>floorLine+25){
+   enemyShots.splice(i,1);continue;
+  }
+  const hitBox={x:t.x-7,y:t.y-4,width:14,height:8};
+  if(respawnTimer<=0&&overlap(hitBox,player)){
+   enemyShots.splice(i,1);
+   damagePlayer();
+  }
+ }
+
  // غواصان
  for(let i=divers.length-1;i>=0;i--){
   const d=divers[i];
@@ -790,6 +840,19 @@ function update(dt){
   const e=enemies[i];
 
   e.x+=e.speed*e.direction*dt;
+
+  if(score>=3000){
+   e.fireCooldown-=dt;
+   if(e.fireCooldown<=0){
+    const sx=e.x+e.width/2,sy=e.y+e.height/2;
+    const dx=player.x+player.width/2-sx;
+    const dy=player.y+player.height/2-sy;
+    const length=Math.max(1,Math.hypot(dx,dy));
+    const shotSpeed=205*(boostApplied?1.08:1);
+    enemyShots.push({x:sx,y:sy,vx:dx/length*shotSpeed,vy:dy/length*shotSpeed,life:4});
+    e.fireCooldown=2.0+Math.random()*1.4;
+   }
+  }
 
   if(respawnTimer<=0&&overlap(e,player)){
    enemies.splice(i,1);
@@ -838,7 +901,7 @@ function resetGame(){
  enterFullscreen();
  stopRefillSound();
 
- score=0;lives=3;oxygen=100;savedDivers=0;alarmTimer=0;
+ score=0;lives=3;oxygen=100;savedDivers=0;alarmTimer=0;oxygenEmptyPlayed=false;
  elapsed=0;enemyTimer=0;diverTimer=0;
  fireTimer=0;fireHeld=false;
  boostApplied=false;
@@ -849,7 +912,7 @@ function resetGame(){
  CFG.fireInterval=.30;
  enemyDirection=-1;
 
- enemies=[];torpedoes=[];
+ enemies=[];torpedoes=[];enemyShots=[];
  divers=[];particles=[];
 
  player.x=65;
