@@ -393,68 +393,42 @@ function spawnDiver(){
 
 function drawDiver(d){
  const x=d.x,y=d.y;
- const kick=Math.sin(elapsed*10+d.phase);
- const arm=Math.sin(elapsed*8+d.phase+1)*2.5;
-
+ const kick=Math.sin(elapsed*8+d.phase);
+ const stroke=Math.sin(elapsed*5+d.phase)*1.5;
  ctx.save();
-
- ctx.fillStyle='#e8e8e8';
- ctx.beginPath();
- ctx.roundRect(x+18,y+5,9,12,3);
- ctx.fill();
-
- rect(x+20,y+3,5,3,'#bfcbd6');
-
- ctx.fillStyle='#f1f1f1';
- ctx.beginPath();
- ctx.ellipse(x+17,y+11,11,5,0,0,Math.PI*2);
- ctx.fill();
-
- ctx.fillStyle='#e9b98e';
- ctx.beginPath();
- ctx.arc(x+5,y+8,5,0,Math.PI*2);
- ctx.fill();
-
- rect(x+1,y+5,6,4,'#38d9f4');
- rect(x,y+6,2,2,'#ffffff');
-
- ctx.strokeStyle='#f4f4f4';
- ctx.lineWidth=3.2;
+ // غواص با لباس غواصی، کپسول، ماسک و فین‌های متحرک
+ ctx.translate(x,y);
  ctx.lineCap='round';
-
- ctx.beginPath();
- ctx.moveTo(x+13,y+8);
- ctx.lineTo(x+8,y+5+arm);
- ctx.lineTo(x+3,y+4+arm);
- ctx.stroke();
-
- ctx.beginPath();
- ctx.moveTo(x+15,y+13);
- ctx.lineTo(x+9,y+16-arm);
- ctx.lineTo(x+4,y+15-arm);
- ctx.stroke();
-
- ctx.beginPath();
- ctx.moveTo(x+23,y+10);
- ctx.lineTo(x+29+kick*3,y+6);
- ctx.lineTo(x+35+kick*4,y+4);
- ctx.stroke();
-
- ctx.beginPath();
- ctx.moveTo(x+23,y+13);
- ctx.lineTo(x+29-kick*3,y+18);
- ctx.lineTo(x+35-kick*4,y+20);
- ctx.stroke();
-
- ctx.strokeStyle='#dcefff';
- ctx.lineWidth=3;
- ctx.beginPath();
- ctx.moveTo(x+33+kick*4,y+4);
- ctx.lineTo(x+37+kick*4,y+2);
- ctx.moveTo(x+33-kick*4,y+20);
- ctx.lineTo(x+37-kick*4,y+22);
- ctx.stroke();
-
+ ctx.lineJoin='round';
+ // کپسول اکسیژن روی پشت
+ const tank=ctx.createLinearGradient(13,4,22,18);
+ tank.addColorStop(0,'#d9e7ec');tank.addColorStop(.45,'#758b99');tank.addColorStop(1,'#344e62');
+ ctx.fillStyle=tank;ctx.beginPath();ctx.roundRect(12,4,8,15,3);ctx.fill();
+ ctx.fillStyle='#d6e2e8';ctx.fillRect(14,2,4,3);
+ // تنه و لباس غواصی
+ const suit=ctx.createLinearGradient(7,5,13,18);
+ suit.addColorStop(0,'#263d55');suit.addColorStop(.5,'#087d9b');suit.addColorStop(1,'#12324e');
+ ctx.fillStyle=suit;ctx.beginPath();ctx.ellipse(16,11,11,5.3,-.05,0,Math.PI*2);ctx.fill();
+ // سر و کلاه
+ ctx.fillStyle='#d8b18c';ctx.beginPath();ctx.arc(3,8,5,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#182c43';ctx.beginPath();ctx.arc(3,6,5,Math.PI,Math.PI*2);ctx.fill();
+ // ماسک شیشه‌ای و بند
+ ctx.fillStyle='#43d8ef';ctx.beginPath();ctx.roundRect(-2,5,7,4,1.5);ctx.fill();
+ ctx.strokeStyle='#dceef4';ctx.lineWidth=1;ctx.strokeRect(-2,5,7,4);
+ ctx.strokeStyle='#263b50';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(-1,5);ctx.lineTo(-3,4);ctx.stroke();
+ // بازوها با حرکت ملایم شنا
+ ctx.strokeStyle='#d5b18f';ctx.lineWidth=3.2;
+ ctx.beginPath();ctx.moveTo(11,8);ctx.quadraticCurveTo(7,5+stroke,5,3+stroke);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(12,14);ctx.quadraticCurveTo(8,17-stroke,5,15-stroke);ctx.stroke();
+ // پاها و فین‌های پهن
+ ctx.strokeStyle='#173a57';ctx.lineWidth=3.8;
+ ctx.beginPath();ctx.moveTo(23,9);ctx.quadraticCurveTo(29,7+kick*2,33,5+kick*3);ctx.stroke();
+ ctx.beginPath();ctx.moveTo(23,13);ctx.quadraticCurveTo(29,16-kick*2,33,18-kick*3);ctx.stroke();
+ ctx.fillStyle='#f0b82e';
+ ctx.beginPath();ctx.moveTo(31,3+kick*3);ctx.quadraticCurveTo(37,1+kick*3,40,4+kick*3);ctx.lineTo(34,8+kick*3);ctx.closePath();ctx.fill();
+ ctx.beginPath();ctx.moveTo(31,17-kick*3);ctx.quadraticCurveTo(37,20-kick*3,40,17-kick*3);ctx.lineTo(34,13-kick*3);ctx.closePath();ctx.fill();
+ // رگولاتور و حباب‌های کوچک
+ ctx.strokeStyle='#d4e6ec';ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(9,8);ctx.quadraticCurveTo(7,12,9,15);ctx.stroke();
  ctx.restore();
 }
 
@@ -555,11 +529,14 @@ function drawEnemy(e){
 
 function drawBackground(){
  const g=ctx.createLinearGradient(0,seaLine,0,H);
- g.addColorStop(0,'#00218c');
- g.addColorStop(1,'#00104c');
+ g.addColorStop(0,'#087fc2');
+ g.addColorStop(.38,'#07528f');
+ g.addColorStop(1,'#031b4c');
 
- rect(0,0,W,H,'#3039b7');
- rect(0,0,W,seaLine,'#3039b7');
+ const sky=ctx.createLinearGradient(0,0,0,seaLine);
+ sky.addColorStop(0,'#4e9fe8');sky.addColorStop(1,'#b4e8f3');
+ rect(0,0,W,H,'#031b4c');
+ ctx.fillStyle=sky;ctx.fillRect(0,0,W,seaLine);
  rect(0,seaLine,W,H-seaLine,g);
 
  ctx.fillStyle='rgba(110,225,255,.28)';
@@ -569,10 +546,12 @@ function drawBackground(){
  ctx.fillStyle='#5bdcff';
  ctx.fillRect(0,seaLine+2,W,2);
 
- ctx.fillStyle='rgba(255,255,255,.45)';
- for(let x=15;x<W;x+=125){
-  ctx.fillRect(x,seaLine-5,32,1);
- }
+ ctx.fillStyle='rgba(255,255,255,.58)';
+ for(let x=15;x<W;x+=125){ctx.fillRect(x,seaLine-5,48,2);}
+ // پرتوهای نور که از سطح آب به عمق می‌رسند
+ ctx.save();ctx.globalAlpha=.10;ctx.fillStyle='#9beaff';
+ for(let x=-80;x<W;x+=190){ctx.beginPath();ctx.moveTo(x,seaLine+5);ctx.lineTo(x+35,seaLine+5);ctx.lineTo(x+125,floorLine);ctx.lineTo(x+70,floorLine);ctx.closePath();ctx.fill();}
+ ctx.restore();
 
  ctx.strokeStyle='rgba(130,170,255,.12)';
  ctx.lineWidth=2;
