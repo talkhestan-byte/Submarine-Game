@@ -22,7 +22,6 @@ canvas{display:block;width:100%;height:100%;image-rendering:auto}
 #fire-btn.active{background:#d54b25;transform:scale(.94)}
 #joystick-area{pointer-events:auto;width:clamp(116px,18vh,158px);height:clamp(116px,18vh,158px);border:3px solid rgba(255,255,255,.65);border-radius:50%;background:rgba(10,35,100,.65);position:relative;touch-action:none}
 #joystick-knob{position:absolute;width:clamp(48px,7vh,66px);height:clamp(48px,7vh,66px);top:50%;left:50%;transform:translate(-50%,-50%);border-radius:50%;background:#ead54b;border:3px solid white;box-shadow:2px 3px 0 #17265c;pointer-events:none}
-#message{position:absolute;top:70px;left:50%;transform:translateX(-50%);color:#ffeb65;font-size:14px;font-weight:bold;text-shadow:2px 2px #001044;opacity:0;pointer-events:none;white-space:nowrap}
 #game-over,#start-screen{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,10,45,.9);color:white;z-index:20}
 #game-over{display:none}
 .panel{text-align:center;background:#09266f;border:4px solid #f3d85c;padding:25px;width:min(90%,370px);box-shadow:5px 5px #001044}
@@ -48,7 +47,6 @@ canvas{display:block;width:100%;height:100%;image-rendering:auto}
  <div class="stat">DIVERS: <span id="divers"></span></div>
  <div class="stat">LIVES: <span id="lives">3</span></div>
 </div>
-<div id="message"></div>
 
 <div id="controls">
  <button id="fire-btn">شلیک</button>
@@ -277,11 +275,7 @@ function oxygenEmptySound(){
 
 // ---------- پیام ----------
 
-function showMessage(text){
- $('message').textContent=text;
- $('message').style.opacity=1;
- messageTimer=1.5;
-}
+function showMessage(){ /* پیام‌های داخل بازی غیرفعال هستند. */ }
 
 // ---------- کنترل جوی‌استیک ----------
 
@@ -845,11 +839,9 @@ function update(dt){
    e.fireCooldown-=dt;
    if(e.fireCooldown<=0){
     const sx=e.x+e.width/2,sy=e.y+e.height/2;
-    const dx=player.x+player.width/2-sx;
-    const dy=player.y+player.height/2-sy;
-    const length=Math.max(1,Math.hypot(dx,dy));
     const shotSpeed=205*(boostApplied?1.08:1);
-    enemyShots.push({x:sx,y:sy,vx:dx/length*shotSpeed,vy:dy/length*shotSpeed,life:4});
+    // گلوله دشمن فقط افقی و در جهت حرکت زیردریایی دشمن پرتاب می‌شود.
+    enemyShots.push({x:sx,y:sy,vx:shotSpeed*e.direction,vy:0,life:4});
     e.fireCooldown=2.0+Math.random()*1.4;
    }
   }
