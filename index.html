@@ -92,7 +92,7 @@ let W=0,H=0,seaLine=0,floorLine=0;
 let score=0,lives=3,oxygen=100,savedDivers=0;
 let active=false,gameEnded=false;
 let lastTime=0,elapsed=0;
-let enemyTimer=0,diverTimer=0,enemyTorpedoTimer=0,enemyTorpedoDirection=1,fireHeld=false,fireTimer=0;
+let enemyTimer=0,diverTimer=0,enemyDirection=-1,fireHeld=false,fireTimer=0;
 let joystickActive=false;
 let joystickVector={x:0,y:0};
 let keyboardVector={x:0,y:0};
@@ -103,7 +103,7 @@ let alarmTimer=0;
 let refillSoundNodes=null;
 let boostApplied=false;
 
-let enemies=[],torpedoes=[],enemyTorpedoes=[],divers=[],particles=[];
+let enemies=[],torpedoes=[],divers=[],particles=[];
 
 const CFG={
  acceleration:820,
@@ -366,18 +366,17 @@ function createExplosion(x,y,c1='#ffdc40',c2='#ff4a20',count=35){
 // ---------- دشمنان ----------
 
 function spawnEnemy(){
- const type=Math.random()>.72?'ship':'sub';
- const y=type==='ship'
-  ?seaLine-28
-  :seaLine+55+Math.random()*Math.max(30,floorLine-seaLine-130);
-
+ const direction=score>=2000?enemyDirection:-1;
+ if(score>=2000)enemyDirection*=-1;
+ const type=Math.random()>.76?'ship':'sub';
+ const variant=Math.floor(Math.random()*3);
+ const width=type==='ship'?62:(variant===0?72:variant===1?64:58);
+ const height=type==='ship'?25:(variant===0?28:variant===1?24:22);
+ const y=type==='ship'?seaLine-28:seaLine+55+Math.random()*Math.max(30,floorLine-seaLine-130);
  enemies.push({
-  x:W+35,y,type,
-  width:type==='ship'?54:42,
-  height:type==='ship'?23:18,
-  speed:(52+Math.random()*24+Math.min(score/45,28))*(boostApplied?1.12:1),
-  fireTimer:1.5+Math.random()*1.5,
-  burst:0
+  x:direction===-1?W+width+24:-width-24,
+  y,type,variant,direction,width,height,
+  speed:(52+Math.random()*24+Math.min(score/45,28))*(boostApplied?1.12:1)
  });
 }
 
@@ -391,21 +390,6 @@ function spawnDiver(){
  });
 }
 
-function spawnEnemyTorpedo(){
- const lateWave=score>=650;
- const direction=lateWave?enemyTorpedoDirection:-1;
- if(lateWave)enemyTorpedoDirection*=-1;
- const width=lateWave?24:21;
- const variant=Math.floor(Math.random()*(lateWave?3:2));
- const y=seaLine+35+Math.random()*Math.max(25,floorLine-seaLine-80);
- const speed=(lateWave?190:155)+Math.random()*(lateWave?45:25);
- enemyTorpedoes.push({
-  // هر اژدر کاملاً بیرون قاب ساخته می‌شود و سپس وارد صفحه می‌شود.
-  x:direction===-1?W+width+8:-width-8,
-  y,width,height:variant===2?8:6,
-  vx:speed*direction,variant
- });
-}
 
 // ---------- غواص طبیعی‌تر ----------
 
@@ -455,52 +439,46 @@ function drawDiver(d){
 function drawSubmarine(x,y,direction,color,animated,phase=0){
  const w=44;
  ctx.save();
- ctx.scale(.82,1);
-
  ctx.translate(x+(direction===-1?w:0),y);
  if(direction===-1)ctx.scale(-1,1);
-
+ ctx.scale(.82,1);
  const bob=animated?Math.sin(elapsed*2.5+phase)*1.2:0;
- const prop=animated?Math.sin(elapsed*22+phase):0;
  ctx.translate(0,bob);
-
- ctx.fillStyle=color;
- ctx.beginPath();
- ctx.moveTo(4,5);ctx.lineTo(39,5);ctx.lineTo(44,9);
- ctx.lineTo(44,17);ctx.lineTo(39,21);ctx.lineTo(4,21);
- ctx.lineTo(1,17);ctx.lineTo(1,9);ctx.closePath();ctx.fill();
- rect(15,0,17,6,color);
- rect(20,-4,7,5,color);
- rect(18,20,15,3,color);
-
- ctx.fillStyle='#55d8f2';
- ctx.beginPath();
- ctx.arc(37,11,3.2,0,Math.PI*2);
- ctx.fill();
- ctx.fillStyle='#ffffff';
- ctx.beginPath();
- ctx.arc(36,10,1.2,0,Math.PI*2);
- ctx.fill();
-
- rect(12,15,24,2,'rgba(80,70,20,.45)');
- rect(9,8,3,8,'rgba(255,255,255,.25)');
-
- rect(1,8,5,10,color);
- rect(0,5,4,5,color);
- rect(0,16,4,5,color);
- rect(-5,12,5,2,'#c9d5df');
-
- ctx.save();
- ctx.translate(-7,13);
- ctx.rotate(elapsed*24+phase);
- ctx.fillStyle='#f3d64c';
- ctx.beginPath();
+ ctx.fillStyle=color;ctx.beginPath();
+ ctx.moveTo(4,5);ctx.lineTo(39,5);ctx.lineTo(44,9);ctx.lineTo(44,17);
+ ctx.lineTo(39,21);ctx.lineTo(4,21);ctx.lineTo(1,17);ctx.lineTo(1,9);ctx.closePath();ctx.fill();
+ rect(15,0,17,6,color);rect(20,-4,7,5,color);rect(18,20,15,3,color);
+ ctx.fillStyle='#55d8f2';ctx.beginPath();ctx.arc(37,11,3.2,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(36,10,1.2,0,Math.PI*2);ctx.fill();
+ rect(12,15,24,2,'rgba(80,70,20,.45)');rect(9,8,3,8,'rgba(255,255,255,.25)');
+ rect(1,8,5,10,color);rect(0,5,4,5,color);rect(0,16,4,5,color);rect(-5,12,5,2,'#c9d5df');
+ ctx.save();ctx.translate(-7,13);ctx.rotate(elapsed*24+phase);ctx.fillStyle='#f3d64c';ctx.beginPath();
  for(let k=0;k<3;k++){ctx.rotate(Math.PI*2/3);ctx.ellipse(0,-5,2.4,6.5,0,0,Math.PI*2)}
- ctx.fill();
- ctx.fillStyle='#ffffff';
- ctx.beginPath();ctx.arc(0,0,2.3,0,Math.PI*2);ctx.fill();
+ ctx.fill();ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(0,0,2.3,0,Math.PI*2);ctx.fill();ctx.restore();
  ctx.restore();
+}
 
+function drawEnemySubmarine(e){
+ ctx.save();
+ ctx.translate(e.x+(e.direction===-1?e.width:0),e.y);
+ if(e.direction===-1)ctx.scale(-1,1);
+ ctx.translate(0,Math.sin(elapsed*2.1+e.y)*1.1);
+ const hull=e.variant===0?'#8795a7':e.variant===1?'#536c82':'#9b7655';
+ const dark=e.variant===0?'#34465c':e.variant===1?'#1d354c':'#51402f';
+ const light=e.variant===0?'#c5d0d9':e.variant===1?'#8ca7b8':'#d2b18a';
+ if(e.variant===0){
+  ctx.fillStyle=hull;ctx.beginPath();ctx.moveTo(2,14);ctx.lineTo(12,5);ctx.lineTo(58,5);ctx.lineTo(70,12);ctx.lineTo(58,22);ctx.lineTo(12,22);ctx.closePath();ctx.fill();
+  rect(24,1,18,5,dark);rect(30,-4,7,5,dark);rect(46,3,9,3,light);rect(15,22,35,3,dark);rect(6,12,5,4,light);
+ }else if(e.variant===1){
+  ctx.fillStyle=hull;ctx.beginPath();ctx.moveTo(1,13);ctx.lineTo(17,3);ctx.lineTo(49,7);ctx.lineTo(63,13);ctx.lineTo(48,20);ctx.lineTo(17,24);ctx.closePath();ctx.fill();
+  ctx.fillStyle=dark;ctx.beginPath();ctx.moveTo(21,4);ctx.lineTo(34,-5);ctx.lineTo(43,5);ctx.closePath();ctx.fill();
+  ctx.beginPath();ctx.moveTo(18,21);ctx.lineTo(8,29);ctx.lineTo(37,22);ctx.closePath();ctx.fill();rect(47,9,8,7,light);rect(10,12,7,3,dark);
+ }else{
+  ctx.fillStyle=hull;ctx.beginPath();ctx.moveTo(2,10);ctx.lineTo(12,4);ctx.lineTo(46,4);ctx.lineTo(58,10);ctx.lineTo(55,21);ctx.lineTo(9,21);ctx.closePath();ctx.fill();
+  rect(17,0,12,6,dark);rect(34,1,11,5,dark);rect(20,-4,5,5,light);rect(37,-3,5,4,light);
+  rect(4,22,15,4,dark);rect(38,22,15,4,dark);rect(48,11,5,4,light);
+ }
+ rect(12,12,5,3,'#bce8ef');rect(23,12,5,3,'#bce8ef');rect(34,12,5,3,'#bce8ef');
  ctx.restore();
 }
 
@@ -516,17 +494,13 @@ function drawPlayer(){
 }
 
 function drawEnemy(e){
- if(e.type==='sub'){
-  // زیردریایی دشمن رو به چپ است؛ همان جهت حرکت و شلیک
-  drawSubmarine(e.x,e.y,-1,'#ffffff',true,e.y);
- }
- if(e.type==='ship'){
-  rect(e.x,e.y+10,e.width,9,'#ffffff');
-  rect(e.x+7,e.y+5,e.width-14,7,'#ffffff');
-  rect(e.x+20,e.y-4,13,10,'#ffffff');
-  rect(e.x+23,e.y-11,5,8,'#ffffff');
-  rect(e.x+11,e.y+7,4,3,'#9ce8ff');
-  rect(e.x+37,e.y+7,4,3,'#9ce8ff');
+ if(e.type==='sub')drawEnemySubmarine(e);
+ else if(e.type==='ship'){
+  ctx.save();ctx.translate(e.x+(e.direction===-1?e.width:0),e.y);
+  if(e.direction===-1)ctx.scale(-1,1);
+  rect(0,10,e.width,10,'#d7e0e8');rect(8,5,e.width-18,7,'#71889a');
+  rect(20,-4,15,10,'#536879');rect(24,-11,6,8,'#d8e1e8');
+  rect(12,7,4,3,'#9ce8ff');rect(42,7,4,3,'#9ce8ff');ctx.restore();
  }
 }
 
@@ -558,14 +532,6 @@ function drawBackground(){
  for(let x=-80;x<W;x+=190){ctx.beginPath();ctx.moveTo(x,seaLine+5);ctx.lineTo(x+35,seaLine+5);ctx.lineTo(x+125,floorLine);ctx.lineTo(x+70,floorLine);ctx.closePath();ctx.fill();}
  ctx.restore();
 
- ctx.strokeStyle='rgba(130,170,255,.12)';
- ctx.lineWidth=2;
- for(let y=seaLine+35;y<floorLine;y+=55){
-  ctx.beginPath();
-  ctx.moveTo(0,y);
-  ctx.lineTo(W,y+2);
-  ctx.stroke();
- }
 
  rect(0,floorLine,W,H-floorLine,'#929292');
  rect(0,floorLine-9,W,9,'#08752a');
@@ -589,30 +555,6 @@ function drawTorpedo(t){
  );
 }
 
-function drawEnemyTorpedo(t){
- ctx.save();
- ctx.shadowColor='#ff9a72';ctx.shadowBlur=6;
- const nose=t.vx<0?t.x:t.x+t.width-5;
- const tail=t.vx<0?t.x+t.width-5:t.x;
- // سه فرم مستطیلی متفاوت؛ بدون مین‌های دایره‌ای
- if(t.variant===0){
-  rect(t.x,t.y,t.width,t.height,'#f1f4f7');
-  rect(nose,t.y-1,5,t.height+2,'#ff684d');
-  rect(tail,t.y+1,4,t.height-2,'#aab7c4');
- }else if(t.variant===1){
-  rect(t.x+2,t.y,t.width-4,t.height,'#d8e5ec');
-  rect(nose,t.y-2,5,t.height+4,'#ffb13b');
-  rect(t.x+t.width/2-2,t.y+1,4,t.height-2,'#60798e');
- }else{
-  rect(t.x,t.y+1,t.width,t.height-2,'#c7d2dd');
-  rect(nose,t.y,5,t.height,'#ff4c42');
-  rect(t.x+t.width/2-4,t.y-2,8,t.height+4,'#748b9d');
- }
- ctx.shadowBlur=0;
- ctx.fillStyle=t.vx<0?'rgba(255,180,150,.5)':'rgba(255,180,150,.5)';
- ctx.fillRect(t.vx<0?t.x+t.width:t.x-8,t.y+Math.floor(t.height/2),8,2);
- ctx.restore();
-}
 
 function drawParticles(){
  for(const p of particles){
@@ -632,7 +574,6 @@ function draw(){
  enemies.forEach(drawEnemy);
  drawPlayer();
  torpedoes.forEach(drawTorpedo);
- enemyTorpedoes.forEach(drawEnemyTorpedo);
  drawParticles();
  ctx.restore();
 }
@@ -790,12 +731,6 @@ function update(dt){
  enemyTimer+=dt;
  diverTimer+=dt;
 
- enemyTorpedoTimer-=dt;
- if(enemyTorpedoTimer<=0){
-  spawnEnemyTorpedo();
-  // در موج پایانی اژدرها از هر دو لبه و با فاصله زمانی کمتر وارد می‌شوند.
-  enemyTorpedoTimer=score>=650?1.45+Math.random()*.35:3.2+Math.random()*.8;
- }
  const enemyInterval=Math.max(1.15,2.65-score/22000)*(boostApplied?.9:1);
  if(enemyTimer>enemyInterval){
   spawnEnemy();
@@ -824,21 +759,6 @@ function update(dt){
   if(t.x>W+30||t.x<-30||t.life<=0)torpedoes.splice(i,1);
  }
 
- // اژدرهای دشمن
- for(let i=enemyTorpedoes.length-1;i>=0;i--){
-  const t=enemyTorpedoes[i];
-  t.x+=t.vx*dt;
-
-  if(t.x+t.width<-30||t.x>W+30){
-   enemyTorpedoes.splice(i,1);
-   continue;
-  }
-
-  if(respawnTimer<=0&&overlap(t,player)){
-   enemyTorpedoes.splice(i,1);
-   damagePlayer();
-  }
- }
 
  // غواصان
  for(let i=divers.length-1;i>=0;i--){
@@ -869,8 +789,7 @@ function update(dt){
  for(let i=enemies.length-1;i>=0;i--){
   const e=enemies[i];
 
-  // حرکت دشمن به سمت چپ
-  e.x-=e.speed*dt;
+  e.x+=e.speed*e.direction*dt;
 
   if(respawnTimer<=0&&overlap(e,player)){
    enemies.splice(i,1);
@@ -878,7 +797,7 @@ function update(dt){
    continue;
   }
 
-  if(e.x+e.width<-20){
+  if((e.direction===-1&&e.x+e.width<-20)||(e.direction===1&&e.x>W+20)){
    enemies.splice(i,1);
    continue;
   }
@@ -888,7 +807,7 @@ function update(dt){
     createExplosion(e.x+e.width/2,e.y+e.height/2,'#ffffff','#d6d6d6',30);
     explosionSound();
 
-    score+=e.type==='ship'?25:e.type==='mine'?15:30;
+    score+=e.type==='ship'?25:30;
     $('score').textContent=score;
     checkDifficulty();
 
@@ -928,10 +847,9 @@ function resetGame(){
  CFG.maxSpeed=225;
  CFG.torpedoSpeed=610;
  CFG.fireInterval=.30;
- enemyTorpedoTimer=1.8;
- enemyTorpedoDirection=1;
+ enemyDirection=-1;
 
- enemies=[];torpedoes=[];enemyTorpedoes=[];
+ enemies=[];torpedoes=[];
  divers=[];particles=[];
 
  player.x=65;
