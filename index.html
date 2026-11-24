@@ -12,8 +12,10 @@ html,body{margin:0;width:100%;height:100%;min-height:100%;overflow:hidden;backgr
 canvas{display:block;width:100%;height:100%;image-rendering:auto}
 #hud{position:absolute;top:env(safe-area-inset-top,0px);left:0;right:0;height:clamp(54px,9vh,82px);display:flex;justify-content:space-between;align-items:center;padding:8px clamp(16px,4vw,34px);color:white;font-weight:bold;pointer-events:none;background:linear-gradient(180deg,rgba(0,0,0,.35),transparent)}
 .stat{font-size:clamp(15px,2.4vh,21px);text-shadow:2px 2px #001044}
-#divers{display:flex;gap:3px}
-.diver-icon{width:13px;height:9px;background:#55df63}
+#divers{display:flex;align-items:center;gap:2px;min-height:28px}
+.diver-icon{width:39px;height:25px;display:block;object-fit:contain}
+#divers.blinking .diver-icon{animation:diverBlink .9s steps(1,end) infinite}
+@keyframes diverBlink{0%,49%{opacity:1}50%,100%{opacity:.08}}
 #oxygen-panel{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);left:50%;transform:translateX(-50%);width:min(58%,460px);height:clamp(17px,2.7vh,24px);border:2px solid #ddd;background:#252525;pointer-events:none}
 #oxygen-bar{height:100%;width:100%;background:#e8e8e8;transition:background .2s}
 #oxygen-label{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 38px);left:50%;transform:translateX(-50%);color:white;font-size:clamp(13px,2vh,17px);font-weight:bold;text-shadow:2px 2px #001044}
@@ -101,6 +103,8 @@ let alarmTimer=0;
 let oxygenEmptyPlayed=false;
 let refillSoundNodes=null;
 let boostApplied=false;
+let enemyCountBoostApplied=false;
+let enemySpeedBoostApplied=false;
 
 let enemies=[],torpedoes=[],enemyShots=[],divers=[],particles=[];
 
@@ -389,7 +393,7 @@ function spawnEnemy(){
  enemies.push({
   x:direction===-1?W+width+24:-width-24,
   y,type,variant,direction,width,height,
-  speed:(52+Math.random()*24+Math.min(score/45,28))*(boostApplied?1.10:1),
+  speed:(52+Math.random()*24+Math.min(score/45,28))*(boostApplied?1.10:1)*(enemySpeedBoostApplied?1.5:1),
   fireCooldown:1.2+Math.random()*2.2
  });
 }
@@ -407,7 +411,8 @@ function spawnDiver(){
 
 // ---------- غواص طبیعی‌تر ----------
 
-function drawDiver(d){
+function drawDiver(d,targetCtx=ctx){
+ const ctx=targetCtx;
  const x=d.x,y=d.y;
  const kick=Math.sin(elapsed*8+d.phase);
  const stroke=Math.sin(elapsed*5+d.phase)*1.5;
@@ -676,6 +681,14 @@ function checkDifficulty(){
   showMessage('ENEMY SPEED INCREASED!');
   tone(420,760,.42,'triangle',.07);
  }
+ if(score>=8000&&!enemyCountBoostApplied){
+  enemyCountBoostApplied=true;
+  tone(520,880,.35,'triangle',.075);
+ }
+ if(score>=10000&&!enemySpeedBoostApplied){
+  enemySpeedBoostApplied=true;
+  tone(300,900,.5,'sawtooth',.08);
+ }
 }
 
 // ---------- به‌روزرسانی ----------
@@ -761,7 +774,7 @@ function update(dt){
  enemyTimer+=dt;
  diverTimer+=dt;
 
- const enemyInterval=Math.max(1.15,2.65-score/22000)*(boostApplied?.9:1);
+ const enemyInterval=Math.max(1.15,2.65-score/22000)*(boostApplied?.9:1)/(enemyCountBoostApplied?1.5:1);
  if(enemyTimer>enemyInterval){
   spawnEnemy();
   enemyTimer=0;
@@ -819,7 +832,7 @@ function update(dt){
    $('score').textContent=score;
    checkDifficulty();
 
-   if(savedDivers>=6){
+   if(savedDivers===6){
     savedDivers=0;
     lives++;
     $('lives').textContent=lives;
@@ -881,9 +894,14 @@ function update(dt){
 function updateDiverIcons(){
  const box=$('divers');
  box.innerHTML='';
+ box.classList.toggle('blinking',savedDivers>=5);
  for(let i=0;i<savedDivers;i++){
-  const el=document.createElement('div');
+  const el=document.createElement('canvas');
   el.className='diver-icon';
+  el.width=78;el.height=50;
+  const iconCtx=el.getContext('2d');
+  iconCtx.scale(1.9,1.9);
+  drawDiver({x:1,y:1,phase:0},iconCtx);
   box.appendChild(el);
  }
 }
@@ -897,6 +915,8 @@ function resetGame(){
  elapsed=0;enemyTimer=0;diverTimer=0;
  fireTimer=0;fireHeld=false;
  boostApplied=false;
+ enemyCountBoostApplied=false;
+ enemySpeedBoostApplied=false;
 
  CFG.acceleration=820;
  CFG.maxSpeed=225;
