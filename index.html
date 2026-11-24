@@ -600,7 +600,7 @@ function draw(){
   ctx.translate((Math.random()-.5)*screenShake,(Math.random()-.5)*screenShake);
  }
  drawBackground();
- divers.forEach(drawDiver);
+ divers.forEach(d=>drawDiver(d));
  enemies.forEach(drawEnemy);
  drawPlayer();
  torpedoes.forEach(drawTorpedo);
