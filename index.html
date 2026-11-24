@@ -44,9 +44,9 @@ canvas{display:block;width:100%;height:100%;image-rendering:auto}
 <canvas id="gameCanvas"></canvas>
 
 <div id="hud">
- <div class="stat">امتیاز: <span id="score">0</span></div>
- <div class="stat">غواصان: <span id="divers"></span></div>
- <div class="stat">جان: <span id="lives">3</span></div>
+ <div class="stat">SCORE: <span id="score">0</span></div>
+ <div class="stat">DIVERS: <span id="divers"></span></div>
+ <div class="stat">LIVES: <span id="lives">3</span></div>
 </div>
 <div id="message"></div>
 
@@ -60,23 +60,23 @@ canvas{display:block;width:100%;height:100%;image-rendering:auto}
 
 <div id="start-screen">
  <div class="panel">
-  <h1>زیردریایی</h1>
+  <h1>SUBMARINE RESCUE</h1>
   <p>
-   زیردریایی را با جوی‌استیک حرکت بده.<br>
-   با یک دکمه در جهت حرکت شلیک کن.<br>
-   غواصان را نجات بده و اکسیژن را حفظ کن.<br>
-   برای شارژ اکسیژن به سطح آب برو.
+   Move with the joystick.<br>
+   Fire in the direction you are moving.<br>
+   Rescue divers and manage your oxygen.<br>
+   Return to the surface to refill oxygen.
   </p>
-  <button class="game-btn" id="start-btn">شروع بازی</button>
+  <button class="game-btn" id="start-btn">START GAME</button>
  </div>
 </div>
 
 <div id="game-over">
  <div class="panel">
-  <h2>بازی تمام شد!</h2>
-  <p>امتیاز شما: <span id="final-score">0</span></p>
-  <button class="game-btn" id="restart-btn">شروع مجدد</button>
-  <button class="game-btn" id="exit-btn">خروج</button>
+  <h2>GAME OVER</h2>
+  <p>YOUR SCORE: <span id="final-score">0</span></p>
+  <button class="game-btn" id="restart-btn">PLAY AGAIN</button>
+  <button class="game-btn" id="exit-btn">EXIT</button>
  </div>
 </div>
 </div>
@@ -92,7 +92,7 @@ let W=0,H=0,seaLine=0,floorLine=0;
 let score=0,lives=3,oxygen=100,savedDivers=0;
 let active=false,gameEnded=false;
 let lastTime=0,elapsed=0;
-let enemyTimer=0,diverTimer=0,fireHeld=false,fireTimer=0;
+let enemyTimer=0,diverTimer=0,enemyTorpedoTimer=0,enemyTorpedoDirection=1,fireHeld=false,fireTimer=0;
 let joystickActive=false;
 let joystickVector={x:0,y:0};
 let keyboardVector={x:0,y:0};
@@ -106,18 +106,18 @@ let boostApplied=false;
 let enemies=[],torpedoes=[],enemyTorpedoes=[],divers=[],particles=[];
 
 const CFG={
- acceleration:1150,
- friction:.94,
- maxSpeed:310,
- fireInterval:.22,
- torpedoSpeed:680,
- oxygenDrain:4,
+ acceleration:820,
+ friction:.92,
+ maxSpeed:225,
+ fireInterval:.30,
+ torpedoSpeed:610,
+ oxygenDrain:3.2,
  oxygenRefill:38
 };
 
 const player={
  x:70,y:200,vx:0,vy:0,
- width:54,height:25,direction:1
+ width:42,height:18,direction:1
 };
 
 function resize(){
@@ -341,8 +341,11 @@ function rect(x,y,w,h,color){
 }
 
 function overlap(a,b){
- return a.x<b.x+b.width&&a.x+a.width>b.x&&
- a.y<b.y+b.height&&a.y+a.height>b.y;
+ // جعبه برخورد زیردریایی از تصویر کوچک‌تر است تا انفجار فقط در تماس نزدیک رخ دهد.
+ const insetA=a===player?{x:a.x+9,y:a.y+3,width:a.width-17,height:a.height-6}:a;
+ const insetB=b===player?{x:b.x+9,y:b.y+3,width:b.width-17,height:b.height-6}:b;
+ return insetA.x<insetB.x+insetB.width&&insetA.x+insetA.width>insetB.x&&
+ insetA.y<insetB.y+insetB.height&&insetA.y+insetA.height>insetB.y;
 }
 
 // ---------- انفجار ----------
@@ -363,17 +366,16 @@ function createExplosion(x,y,c1='#ffdc40',c2='#ff4a20',count=35){
 // ---------- دشمنان ----------
 
 function spawnEnemy(){
- const r=Math.random();
- const type=r>.90?'ship':r>.74?'mine':'sub';
+ const type=Math.random()>.72?'ship':'sub';
  const y=type==='ship'
   ?seaLine-28
   :seaLine+55+Math.random()*Math.max(30,floorLine-seaLine-130);
 
  enemies.push({
   x:W+35,y,type,
-  width:type==='ship'?54:type==='mine'?27:46,
-  height:type==='mine'?27:23,
-  speed:(75+Math.random()*35+Math.min(score/15,80))*(boostApplied?1.2:1),
+  width:type==='ship'?54:42,
+  height:type==='ship'?23:18,
+  speed:(52+Math.random()*24+Math.min(score/45,28))*(boostApplied?1.12:1),
   fireTimer:1.5+Math.random()*1.5,
   burst:0
  });
@@ -435,7 +437,7 @@ function drawDiver(d){
 // ---------- زیردریایی ----------
 
 function drawSubmarine(x,y,direction,color,animated,phase=0){
- const w=54;
+ const w=44;
  ctx.save();
  ctx.scale(.82,1);
 
@@ -448,18 +450,12 @@ function drawSubmarine(x,y,direction,color,animated,phase=0){
 
  ctx.fillStyle=color;
  ctx.beginPath();
- ctx.moveTo(5,13);
- ctx.quadraticCurveTo(7,3,20,3);
- ctx.lineTo(42,5);
- ctx.quadraticCurveTo(53,8,53,13);
- ctx.quadraticCurveTo(51,22,39,22);
- ctx.lineTo(15,21);
- ctx.quadraticCurveTo(5,20,5,13);
- ctx.fill();
-
- rect(16,0,17,6,color);
+ ctx.moveTo(4,5);ctx.lineTo(39,5);ctx.lineTo(44,9);
+ ctx.lineTo(44,17);ctx.lineTo(39,21);ctx.lineTo(4,21);
+ ctx.lineTo(1,17);ctx.lineTo(1,9);ctx.closePath();ctx.fill();
+ rect(15,0,17,6,color);
  rect(20,-4,7,5,color);
- rect(20,20,15,4,color);
+ rect(18,20,15,3,color);
 
  ctx.fillStyle='#55d8f2';
  ctx.beginPath();
@@ -515,13 +511,6 @@ function drawEnemy(e){
   rect(e.x+23,e.y-11,5,8,'#ffffff');
   rect(e.x+11,e.y+7,4,3,'#9ce8ff');
   rect(e.x+37,e.y+7,4,3,'#9ce8ff');
- }
- if(e.type==='mine'){
-  const cx=e.x+e.width/2,cy=e.y+e.height/2;
-  rect(cx-10,cy-10,20,20,'#ffffff');
-  rect(cx-14,cy-5,28,10,'#ffffff');
-  rect(cx-5,cy-14,10,28,'#ffffff');
-  rect(cx-3,cy-3,6,6,'#555555');
  }
 }
 
@@ -685,13 +674,13 @@ function damagePlayer(){
 // ---------- سختی مرحله ----------
 
 function checkDifficulty(){
- if(score>=1000&&!boostApplied){
+ if(score>=650&&!boostApplied){
   boostApplied=true;
-  CFG.maxSpeed*=1.2;
-  CFG.acceleration*=1.2;
-  CFG.torpedoSpeed*=1.2;
-  CFG.fireInterval*=.9;
-  showMessage('خطر بیشتر شد! سرعت دشمنان افزایش یافت');
+  CFG.maxSpeed*=1.08;
+  CFG.acceleration*=1.08;
+  CFG.torpedoSpeed*=1.08;
+  CFG.fireInterval*=.94;
+  showMessage('FINAL WAVE! INCOMING TORPEDOES');
   tone(500,1100,.5,'sawtooth',.08);
  }
 }
@@ -779,7 +768,7 @@ function update(dt){
  enemyTimer+=dt;
  diverTimer+=dt;
 
- const enemyInterval=Math.max(.55,1.7-score/16000)*(boostApplied?.8:1);
+ const enemyInterval=Math.max(1.15,2.65-score/22000)*(boostApplied?.9:1);
  if(enemyTimer>enemyInterval){
   spawnEnemy();
   enemyTimer=0;
@@ -929,10 +918,12 @@ function resetGame(){
  fireTimer=0;fireHeld=false;
  boostApplied=false;
 
- CFG.acceleration=1150;
- CFG.maxSpeed=310;
- CFG.torpedoSpeed=680;
- CFG.fireInterval=.22;
+ CFG.acceleration=820;
+ CFG.maxSpeed=225;
+ CFG.torpedoSpeed=610;
+ CFG.fireInterval=.30;
+ enemyTorpedoTimer=1.8;
+ enemyTorpedoDirection=1;
 
  enemies=[];torpedoes=[];enemyTorpedoes=[];
  divers=[];particles=[];
