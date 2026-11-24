@@ -391,6 +391,22 @@ function spawnDiver(){
  });
 }
 
+function spawnEnemyTorpedo(){
+ const lateWave=score>=650;
+ const direction=lateWave?enemyTorpedoDirection:-1;
+ if(lateWave)enemyTorpedoDirection*=-1;
+ const width=lateWave?24:21;
+ const variant=Math.floor(Math.random()*(lateWave?3:2));
+ const y=seaLine+35+Math.random()*Math.max(25,floorLine-seaLine-80);
+ const speed=(lateWave?190:155)+Math.random()*(lateWave?45:25);
+ enemyTorpedoes.push({
+  // هر اژدر کاملاً بیرون قاب ساخته می‌شود و سپس وارد صفحه می‌شود.
+  x:direction===-1?W+width+8:-width-8,
+  y,width,height:variant===2?8:6,
+  vx:speed*direction,variant
+ });
+}
+
 // ---------- غواص طبیعی‌تر ----------
 
 function drawDiver(d){
@@ -575,20 +591,26 @@ function drawTorpedo(t){
 
 function drawEnemyTorpedo(t){
  ctx.save();
- ctx.shadowColor='#ffb5a0';
- ctx.shadowBlur=5;
-
- // بدنه کوچک اژدر
- rect(t.x,t.y,t.width,t.height,'#ffffff');
-
- // نوک اژدر در سمت چپ
- rect(t.x,t.y,3,t.height,'#ff684d');
-
- // رد نور باریک پشت اژدر
+ ctx.shadowColor='#ff9a72';ctx.shadowBlur=6;
+ const nose=t.vx<0?t.x:t.x+t.width-5;
+ const tail=t.vx<0?t.x+t.width-5:t.x;
+ // سه فرم مستطیلی متفاوت؛ بدون مین‌های دایره‌ای
+ if(t.variant===0){
+  rect(t.x,t.y,t.width,t.height,'#f1f4f7');
+  rect(nose,t.y-1,5,t.height+2,'#ff684d');
+  rect(tail,t.y+1,4,t.height-2,'#aab7c4');
+ }else if(t.variant===1){
+  rect(t.x+2,t.y,t.width-4,t.height,'#d8e5ec');
+  rect(nose,t.y-2,5,t.height+4,'#ffb13b');
+  rect(t.x+t.width/2-2,t.y+1,4,t.height-2,'#60798e');
+ }else{
+  rect(t.x,t.y+1,t.width,t.height-2,'#c7d2dd');
+  rect(nose,t.y,5,t.height,'#ff4c42');
+  rect(t.x+t.width/2-4,t.y-2,8,t.height+4,'#748b9d');
+ }
  ctx.shadowBlur=0;
- ctx.fillStyle='rgba(255,180,150,.45)';
- ctx.fillRect(t.x+t.width,t.y+1,8,1.5);
-
+ ctx.fillStyle=t.vx<0?'rgba(255,180,150,.5)':'rgba(255,180,150,.5)';
+ ctx.fillRect(t.vx<0?t.x+t.width:t.x-8,t.y+Math.floor(t.height/2),8,2);
  ctx.restore();
 }
 
@@ -768,6 +790,12 @@ function update(dt){
  enemyTimer+=dt;
  diverTimer+=dt;
 
+ enemyTorpedoTimer-=dt;
+ if(enemyTorpedoTimer<=0){
+  spawnEnemyTorpedo();
+  // در موج پایانی اژدرها از هر دو لبه و با فاصله زمانی کمتر وارد می‌شوند.
+  enemyTorpedoTimer=score>=650?1.45+Math.random()*.35:3.2+Math.random()*.8;
+ }
  const enemyInterval=Math.max(1.15,2.65-score/22000)*(boostApplied?.9:1);
  if(enemyTimer>enemyInterval){
   spawnEnemy();
@@ -801,7 +829,7 @@ function update(dt){
   const t=enemyTorpedoes[i];
   t.x+=t.vx*dt;
 
-  if(t.x+t.width<-30){
+  if(t.x+t.width<-30||t.x>W+30){
    enemyTorpedoes.splice(i,1);
    continue;
   }
@@ -843,28 +871,6 @@ function update(dt){
 
   // حرکت دشمن به سمت چپ
   e.x-=e.speed*dt;
-
-  if(e.type==='sub'&&score>500){
-   e.fireTimer-=dt;
-
-   if(e.fireTimer<=0){
-    const enemySpeed=boostApplied?264:220;
-    const shots=boostApplied?2:1;
-
-    for(let k=0;k<shots;k++){
-     enemyTorpedoes.push({
-      // اژدر از جلوی زیردریایی دشمن که رو به چپ است خارج می‌شود
-      x:e.x-11,
-      y:e.y+e.height/2+(k===0?-4:4),
-      vx:-enemySpeed,
-      width:11,
-      height:3
-     });
-    }
-
-    e.fireTimer=(2.2+Math.random()*1.5)*(boostApplied?.8:1);
-   }
-  }
 
   if(respawnTimer<=0&&overlap(e,player)){
    enemies.splice(i,1);
