@@ -105,6 +105,11 @@ let refillSoundNodes=null;
 let boostApplied=false;
 let enemyCountBoostApplied=false;
 let enemySpeedBoostApplied=false;
+let diverRateBoostApplied=false;
+let enemySpeed12000Applied=false;
+let twinTorpedoBoostApplied=false;
+let nextLifeBonusScore=10000;
+let heartRewardTimer=0;
 
 let enemies=[],torpedoes=[],enemyShots=[],divers=[],particles=[];
 
@@ -341,12 +346,16 @@ fireBtn.addEventListener('lostpointercapture',releaseFire);
 function fireTorpedo(){
  if(!active||respawnTimer>0)return;
  const dir=player.direction;
- torpedoes.push({
-  x:dir===1?player.x+player.width:player.x-20,
-  y:player.y+player.height/2-3,
-  vx:CFG.torpedoSpeed*dir,
-  width:20,height:6,life:3,direction:dir
- });
+ const x=dir===1?player.x+player.width:player.x-20;
+ const centerY=player.y+player.height/2-3;
+ const shots=twinTorpedoBoostApplied?[-7,7]:[0];
+ for(const offset of shots){
+  torpedoes.push({
+   x,y:centerY+offset,
+   vx:CFG.torpedoSpeed*dir,
+   width:20,height:6,life:3,direction:dir
+  });
+ }
  shootSound();
 }
 
@@ -393,7 +402,7 @@ function spawnEnemy(){
  enemies.push({
   x:direction===-1?W+width+24:-width-24,
   y,type,variant,direction,width,height,
-  speed:(52+Math.random()*24+Math.min(score/45,28))*(boostApplied?1.10:1)*(enemySpeedBoostApplied?1.5:1),
+  speed:(52+Math.random()*24+Math.min(score/45,28))*(boostApplied?1.10:1)*(enemySpeedBoostApplied?1.5:1)*(enemySpeed12000Applied?1.10:1),
   fireCooldown:1.2+Math.random()*2.2
  });
 }
@@ -594,6 +603,35 @@ function drawParticles(){
  ctx.globalAlpha=1;
 }
 
+function drawRewardHeart(){
+ if(heartRewardTimer<=0)return;
+ const progress=heartRewardTimer;
+ const pulse=1+Math.sin((1-progress)*Math.PI*8)*.13;
+ const alpha=Math.min(1,progress*3);
+ ctx.save();
+ ctx.globalAlpha=alpha;
+ ctx.translate(W/2,Math.max(105,seaLine+24));
+ ctx.scale(pulse,pulse);
+ ctx.shadowColor='#ffd52a';
+ ctx.shadowBlur=24;
+ const gold=ctx.createLinearGradient(0,-22,0,24);
+ gold.addColorStop(0,'#fff7a6');
+ gold.addColorStop(.42,'#ffd52a');
+ gold.addColorStop(1,'#d88900');
+ ctx.fillStyle=gold;
+ ctx.strokeStyle='#fff1a0';
+ ctx.lineWidth=2;
+ ctx.beginPath();
+ ctx.moveTo(0,20);
+ ctx.bezierCurveTo(-8,12,-25,1,-22,-11);
+ ctx.bezierCurveTo(-19,-25,-3,-25,0,-12);
+ ctx.bezierCurveTo(5,-26,21,-24,23,-10);
+ ctx.bezierCurveTo(26,2,9,14,0,20);
+ ctx.closePath();
+ ctx.fill();ctx.stroke();
+ ctx.restore();
+}
+
 function draw(){
  ctx.save();
  if(screenShake>0){
@@ -607,6 +645,7 @@ function draw(){
  enemyShots.forEach(drawEnemyShot);
  drawParticles();
  ctx.restore();
+ drawRewardHeart();
 }
 
 // ---------- اکسیژن ----------
@@ -689,12 +728,32 @@ function checkDifficulty(){
   enemySpeedBoostApplied=true;
   tone(300,900,.5,'sawtooth',.08);
  }
+ if(score>=12000&&!enemySpeed12000Applied){
+  enemySpeed12000Applied=true;
+  for(const enemy of enemies)enemy.speed*=1.10;
+  tone(360,980,.42,'triangle',.075);
+ }
+ if(score>=12000&&!twinTorpedoBoostApplied){
+  twinTorpedoBoostApplied=true;
+  tone(620,1120,.3,'sine',.07);
+ }
+ if(score>=8000&&!diverRateBoostApplied){
+  diverRateBoostApplied=true;
+ }
+ while(score>=nextLifeBonusScore){
+  lives++;
+  $('lives').textContent=lives;
+  heartRewardTimer=1;
+  nextLifeBonusScore+=1000;
+  tone(740,1320,.45,'sine',.12);
+ }
 }
 
 // ---------- به‌روزرسانی ----------
 
 function update(dt){
  elapsed+=dt;
+ if(heartRewardTimer>0)heartRewardTimer=Math.max(0,heartRewardTimer-dt);
 
  if(messageTimer>0){
   messageTimer-=dt;
@@ -779,7 +838,8 @@ function update(dt){
   spawnEnemy();
   enemyTimer=0;
  }
- if(diverTimer>5.2){
+ const diverSpawnInterval=diverRateBoostApplied?6.5:5.2;
+ if(diverTimer>diverSpawnInterval){
   spawnDiver();
   diverTimer=0;
  }
@@ -917,6 +977,11 @@ function resetGame(){
  boostApplied=false;
  enemyCountBoostApplied=false;
  enemySpeedBoostApplied=false;
+ diverRateBoostApplied=false;
+ enemySpeed12000Applied=false;
+ twinTorpedoBoostApplied=false;
+ nextLifeBonusScore=10000;
+ heartRewardTimer=0;
 
  CFG.acceleration=820;
  CFG.maxSpeed=225;
