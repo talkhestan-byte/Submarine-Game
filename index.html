@@ -106,12 +106,14 @@ let boostApplied=false;
 let enemyCountBoostApplied=false;
 let enemySpeedBoostApplied=false;
 let diverRateBoostApplied=false;
+let diverRate17000Applied=false;
 let enemySpeed12000Applied=false;
 let twinTorpedoBoostApplied=false;
 let nextLifeBonusScore=10000;
 let heartRewardTimer=0;
 
-let enemies=[],torpedoes=[],enemyShots=[],divers=[],particles=[];
+let enemies=[],torpedoes=[],enemyShots=[],divers=[],particles=[],mines=[];
+let passedShipsForMine=0;
 
 const CFG={
  acceleration:820,
@@ -407,6 +409,11 @@ function spawnEnemy(){
  });
 }
 
+function spawnMine(x){
+ const radius=Math.max(5,player.width*.16);
+ mines.push({x:Math.max(radius+3,Math.min(W-radius-3,x)),y:seaLine+radius+2,vx:(Math.random()-.5)*9,vy:24,gravity:72,radius,phase:Math.random()*Math.PI*2,bubbleTimer:0});
+}
+
 function spawnDiver(){
  divers.push({
   x:W+35,
@@ -518,6 +525,30 @@ function drawPlayer(){
  ctx.translate(player.x+player.width/2,player.y+player.height/2);
  ctx.rotate(angle);
  drawSubmarine(-player.width/2,-player.height/2,player.direction,'#ead33d',true);
+ ctx.restore();
+}
+
+function drawMine(m){
+ ctx.save();
+ const pulse=1+Math.sin(elapsed*5+m.phase)*.045;
+ ctx.translate(m.x,m.y);
+ ctx.scale(pulse,pulse);
+ // حباب‌های کوچک پشت مین برای القای حرکت در آب
+ ctx.fillStyle='rgba(190,245,255,.42)';
+ for(let i=0;i<3;i++){
+  const by=-10-i*7-((elapsed*17+m.phase*9+i*5)%8);
+  const bx=Math.sin(elapsed*2.2+m.phase+i)*3;
+  ctx.beginPath();ctx.arc(bx,by,1.2+i*.25,0,Math.PI*2);ctx.fill();
+ }
+ // بدنه دایره‌ای قرمز و نیمه‌شفاف، متناسب با قطر پروانه زیردریایی
+ ctx.fillStyle='rgba(255,35,48,.58)';
+ ctx.strokeStyle='rgba(255,105,112,.92)';
+ ctx.lineWidth=1.5;
+ ctx.shadowColor='rgba(255,25,40,.55)';ctx.shadowBlur=7;
+ ctx.beginPath();ctx.arc(0,0,m.radius,0,Math.PI*2);ctx.fill();ctx.stroke();
+ ctx.shadowBlur=0;
+ ctx.fillStyle='rgba(255,220,220,.75)';
+ ctx.beginPath();ctx.arc(-m.radius*.28,-m.radius*.3,Math.max(1,m.radius*.17),0,Math.PI*2);ctx.fill();
  ctx.restore();
 }
 
@@ -640,6 +671,7 @@ function draw(){
  drawBackground();
  divers.forEach(d=>drawDiver(d));
  enemies.forEach(drawEnemy);
+ mines.forEach(drawMine);
  drawPlayer();
  torpedoes.forEach(drawTorpedo);
  enemyShots.forEach(drawEnemyShot);
@@ -740,6 +772,10 @@ function checkDifficulty(){
  if(score>=8000&&!diverRateBoostApplied){
   diverRateBoostApplied=true;
  }
+ if(score>=17000&&!diverRate17000Applied){
+  diverRate17000Applied=true;
+  tone(420,1040,.42,'triangle',.075);
+ }
  while(score>=nextLifeBonusScore){
   lives++;
   $('lives').textContent=lives;
@@ -833,12 +869,12 @@ function update(dt){
  enemyTimer+=dt;
  diverTimer+=dt;
 
- const enemyInterval=Math.max(1.15,2.65-score/22000)*(boostApplied?.9:1)/(enemyCountBoostApplied?1.5:1);
+ const enemyInterval=Math.max(1.15,2.65-score/22000)*(boostApplied?.9:1)/(enemyCountBoostApplied?1.5:1)/(score>=17000?1.2:1);
  if(enemyTimer>enemyInterval){
   spawnEnemy();
   enemyTimer=0;
  }
- const diverSpawnInterval=diverRateBoostApplied?6.5:5.2;
+ const diverSpawnInterval=(diverRateBoostApplied?6.5:5.2)*(diverRate17000Applied?1.25:1);
  if(diverTimer>diverSpawnInterval){
   spawnDiver();
   diverTimer=0;
@@ -862,6 +898,30 @@ function update(dt){
   if(t.x>W+30||t.x<-30||t.life<=0)torpedoes.splice(i,1);
  }
 
+
+ // مین‌های دریایی: سقوط شتاب‌دار در آب و انفجار در کف یا هنگام برخورد
+ for(let i=mines.length-1;i>=0;i--){
+  const m=mines[i];
+  m.vy=Math.min(185,m.vy+m.gravity*dt);
+  m.x+=m.vx*dt+Math.sin(elapsed*1.7+m.phase)*5*dt;
+  m.y+=m.vy*dt;
+  m.bubbleTimer-=dt;
+  if(m.bubbleTimer<=0){
+   particles.push({x:m.x+(Math.random()-.5)*m.radius,y:m.y-m.radius-3,vx:(Math.random()-.5)*8,vy:-18-Math.random()*16,life:.35+Math.random()*.2,maxLife:.55,size:1.5+Math.random()*1.5,color:'rgba(185,240,255,.8)'});
+   m.bubbleTimer=.11;
+  }
+  const px=Math.max(player.x+9,Math.min(m.x,player.x+player.width-8));
+  const py=Math.max(player.y+3,Math.min(m.y,player.y+player.height-3));
+  const hitPlayer=respawnTimer<=0&&Math.hypot(m.x-px,m.y-py)<m.radius+1;
+  const reachedBottom=m.y+m.radius>=floorLine-2;
+  if(hitPlayer||reachedBottom){
+   createExplosion(m.x,m.y,'#ffdf54','#ff263b',hitPlayer?48:34);
+   explosionSound();
+   screenShake=Math.max(screenShake,hitPlayer?12:5);
+   mines.splice(i,1);
+   if(hitPlayer)damagePlayer();
+  }
+ }
 
  // گلوله‌های دشمن
  for(let i=enemyShots.length-1;i>=0;i--){
@@ -926,6 +986,13 @@ function update(dt){
   }
 
   if((e.direction===-1&&e.x+e.width<-20)||(e.direction===1&&e.x>W+20)){
+   if(e.type==='ship'&&score>=15000){
+    passedShipsForMine++;
+    if(passedShipsForMine>=2){
+     spawnMine(e.x+e.width/2);
+     passedShipsForMine=0;
+    }
+   }
    enemies.splice(i,1);
    continue;
   }
@@ -978,6 +1045,7 @@ function resetGame(){
  enemyCountBoostApplied=false;
  enemySpeedBoostApplied=false;
  diverRateBoostApplied=false;
+ diverRate17000Applied=false;
  enemySpeed12000Applied=false;
  twinTorpedoBoostApplied=false;
  nextLifeBonusScore=10000;
@@ -990,7 +1058,7 @@ function resetGame(){
  enemyDirection=-1;
 
  enemies=[];torpedoes=[];enemyShots=[];
- divers=[];particles=[];
+ divers=[];particles=[];mines=[];passedShipsForMine=0;
 
  player.x=65;
  player.y=seaLine+H*.25;
